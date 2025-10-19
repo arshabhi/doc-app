@@ -1,0 +1,62 @@
+[project]
+name = "genai-chatbot-backend"
+version = "0.1.0"
+description = "FastAPI + LLM-powered conversational chatbot backend with RAG and session management."
+authors = [
+    { name = "A Kayal", email = "your_email@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.0",
+    "SQLAlchemy==2.0.32",
+    "asyncpg==0.29.0",
+    "alembic==1.13.1",
+    "python-jose==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "python-multipart==0.0.9",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.4.0",
+    "openai==1.46.0",
+    "tiktoken==0.7.0",
+    "faiss-cpu==1.8.0",
+    "langchain==0.2.11",
+    "langchain-community==0.2.7",
+    "sentence-transformers==3.1.1",
+    "httpx==0.27.0",
+    "aiofiles==24.1.0",
+    "python-dotenv==1.0.1",
+    "loguru==0.7.2"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.2",
+    "pytest-asyncio==0.23.7",
+    "black==24.8.0",
+    "ruff==0.6.2",
+    "mypy==1.10.1"
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+skip-string-normalization = true
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+ignore = ["W503"]
+exclude = ["migrations"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+
+[build-system]
+requires = ["setuptools>=67.0", "wheel"]
+build-backend = "setuptools.build_meta"
