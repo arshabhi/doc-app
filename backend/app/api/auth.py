@@ -1,11 +1,12 @@
 # app/api/auth.py
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 from app.db.session import get_db
 from app.db.models import User
-from app.core.security import create_access_token, create_refresh_token, verify_password, hash_password
+from app.core.security import create_access_token, create_refresh_token, verify_password, hash_password, create_access_token_from_refresh
 from app.db.crud import user_crud
 from app.db.schemas.user import UserCreate, UserLogin, TokenResponse
 from app.core.config import settings
@@ -38,3 +39,14 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
 async def refresh_token(refresh_token: str):
     payload = await create_access_token_from_refresh(refresh_token)
     return TokenResponse(**payload)
+
+@router.post("/login-form", response_model=TokenResponse)
+async def login_form(form_data: OAuth2PasswordRequestForm = Depends(),
+                     db: AsyncSession = Depends(get_db)):
+    user = await user_crud.get_by_email(db, form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    access_token = create_access_token({"sub": user.email})
+    refresh_token = create_refresh_token({"sub": user.email})
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)

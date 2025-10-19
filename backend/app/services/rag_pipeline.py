@@ -8,17 +8,16 @@ from typing import List, Tuple, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import RetrievalQA
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 
-from app.core.config import settings
 from app.db.models import Document as DocumentModel
 
 logger = logging.getLogger(__name__)
-
 
 # -----------------------------
 # RAG Pipeline Main Entry
@@ -27,12 +26,16 @@ async def run_rag_pipeline(
     user_message: str,
     user_id: str,
     db: AsyncSession,
+    llm=None,  # Optional injection from API (defaults to Gemini)
 ) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Retrieval-Augmented Generation pipeline for a user's message.
-    Retrieves the user's documents, builds embeddings (or loads index),
-    and uses an LLM to generate a contextualized answer.
+    Uses Gemini (via LangChain) for embeddings + LLM response.
     """
+
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY not found in environment variables.")
 
     # Step 1: Fetch user's documents
     docs = await _get_user_documents(db, user_id)
@@ -47,7 +50,6 @@ async def run_rag_pipeline(
     texts, metadatas = [], []
 
     for doc in docs:
-        # We assume meta_data may store structured info like {"text": "..."}
         content = doc.meta_data.get("text") if doc.meta_data else None
         if not content:
             continue
@@ -59,39 +61,71 @@ async def run_rag_pipeline(
     if not texts:
         return ("No valid text found in your uploaded documents.", [])
 
-    # Step 3: Create vector store in-memory
-    embeddings = OpenAIEmbeddings(
-        model=settings.OPENAI_EMBEDDING_MODEL,
-        openai_api_key=settings.OPENAI_API_KEY,
-    )
-    vector_store = await asyncio.to_thread(FAISS.from_texts, texts, embeddings, metadatas=metadatas)
+    logger.info("Text chunks prepared for RAG pipeline.")
 
-    # Step 4: Retrieve & generate response
+    # Step 3: Create embeddings + vector store
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001", 
+        google_api_key=GEMINI_API_KEY
+    )
+    vector_store = await asyncio.to_thread(
+        FAISS.from_texts, 
+        texts, 
+        embeddings, 
+        metadatas=metadatas
+    )
+    
+    # Step 4: Set up retriever
     retriever = vector_store.as_retriever(search_kwargs={"k": 4})
-    llm = ChatOpenAI(
-        temperature=0.3,
-        model_name="gpt-4o-mini",
-        openai_api_key=settings.OPENAI_API_KEY,
-    )
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
+
+    # Step 5: Use Gemini model (inject or default)
+    llm = llm or ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash-exp",
+        google_api_key=GEMINI_API_KEY,
+        temperature=0.2,
     )
 
-    logger.info(f"Running RAG pipeline for user {user_id}: {user_message[:60]}...")
+    # Step 6: Create RAG prompt template
+    prompt = ChatPromptTemplate.from_template("""
+Answer the question based only on the following context:
 
-    # Run the blocking LLM inference off the event loop
-    result = await asyncio.to_thread(qa_chain, {"query": user_message})
+{context}
 
-    llm_output = result["result"]
+Question: {question}
+
+Provide a detailed answer based on the context above. If the answer cannot be found in the context, say so.
+""")
+
+    # Step 7: Format documents helper function
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    # Step 8: Create RAG chain using LCEL
+    rag_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    logger.info(f"Running Gemini RAG pipeline for user {user_id}: {user_message[:60]}...")
+
+    # Step 9: Get retrieved documents for sources
+    retrieved_docs = await asyncio.to_thread(
+        retriever.get_relevant_documents, 
+        user_message
+    )
+
+    # Step 10: Run LLM inference safely in background thread
+    llm_output = await asyncio.to_thread(rag_chain.invoke, user_message)
+
+    # Step 11: Parse sources
     sources = [
         {
             "filename": doc.metadata.get("filename", ""),
             "excerpt": doc.page_content[:200],
         }
-        for doc in result["source_documents"]
+        for doc in retrieved_docs
     ]
 
     return llm_output, sources
