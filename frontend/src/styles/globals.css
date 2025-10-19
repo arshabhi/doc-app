@@ -1,9 +1,16 @@
 @custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
 
 :root {
-  --font-size: 16px;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: monospace;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-lg: 1.125rem;
+  --radius: 0.625rem;
   --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
+  --foreground: #030213;
+  --font-size: 16px;
   --card: #ffffff;
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -42,8 +49,8 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
+  --background: #030213;
+  --foreground: #ffffff;
   --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
