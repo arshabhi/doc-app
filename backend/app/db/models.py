@@ -26,7 +26,7 @@ class Document(Base):
     filename = sa.Column(sa.String(512))
     content_type = sa.Column(sa.String(128))
     uploaded_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
-    metadata = sa.Column(sa.JSON, default={})
+    meta_data = sa.Column(sa.JSON, default={})
 
     owner = relationship("User", back_populates="documents")
     embeddings = relationship("Embedding", back_populates="document", cascade="all, delete-orphan")
@@ -50,7 +50,7 @@ class Message(Base):
     role = sa.Column(sa.Enum("user", "assistant", "system", name="role_enum"), nullable=False)
     content = sa.Column(sa.Text, nullable=False)
     created_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
-    metadata = sa.Column(sa.JSON, default={})
+    meta_data = sa.Column(sa.JSON, default={})
 
     session = relationship("ChatSession", back_populates="messages")
 

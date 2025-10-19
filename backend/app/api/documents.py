@@ -14,11 +14,23 @@ async def upload_document(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    """
+    Uploads a document, stores content and metadata in the database.
+    """
     try:
-        result = await process_and_store_document(file, current_user.id, db)
-        return {"status": "success", "details": result}
+        content = await file.read()
+        content_str = content.decode("utf-8")  # or "latin-1" if needed
+        result = await process_and_store_document(
+            db=db,
+            owner_id=current_user.id,
+            filename=file.filename,
+            content=content_str,
+            metadata={}
+        )
+        return {"status": "success", "details": {"id": str(result.id), "filename": result.filename}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
+
 
 @router.get("/list")
 async def list_documents(

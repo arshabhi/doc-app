@@ -1,5 +1,5 @@
 # app/core/config.py
-from pydantic import BaseSettings, AnyUrl
+from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
@@ -20,11 +20,13 @@ class Settings(BaseSettings):
 
     # OpenAI or LLM provider keys
     OPENAI_API_KEY: str = ""
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
     VECTOR_DB_PATH: str = "./app/data/faiss_index"
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"   
 
 settings = Settings()
