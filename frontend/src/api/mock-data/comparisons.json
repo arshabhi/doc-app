@@ -1,0 +1,174 @@
+{
+  "comparisons": [
+    {
+      "id": "cmp_1a2b3c4d5e",
+      "documentId1": "doc_1a2b3c4d5e",
+      "documentId2": "doc_2b3c4d5e6f",
+      "document1Name": "Project Proposal v1.pdf",
+      "document2Name": "Project Proposal v2.pdf",
+      "userId": "usr_2b3c4d5e6f",
+      "comparisonType": "full",
+      "status": "completed",
+      "createdAt": "2025-10-20T11:00:00Z",
+      "completedAt": "2025-10-20T11:00:15Z",
+      "summary": {
+        "totalChanges": 47,
+        "additions": 23,
+        "deletions": 12,
+        "modifications": 12,
+        "similarityScore": 0.87,
+        "changesPercentage": 13.2
+      },
+      "changes": [
+        {
+          "id": "chg_1",
+          "type": "addition",
+          "location": {
+            "document": 2,
+            "page": 3,
+            "section": "Budget Overview",
+            "lineNumber": 45
+          },
+          "content": "Additional budget allocation of $50,000 for marketing initiatives",
+          "context": {
+            "before": "Total Marketing Budget: $200,000",
+            "after": "Total Marketing Budget: $250,000\nAdditional budget allocation of $50,000 for marketing initiatives"
+          },
+          "severity": "major",
+          "category": "financial"
+        },
+        {
+          "id": "chg_2",
+          "type": "modification",
+          "location": {
+            "document": 2,
+            "page": 5,
+            "section": "Timeline",
+            "lineNumber": 78
+          },
+          "content": {
+            "original": "Project completion: December 31, 2025",
+            "modified": "Project completion: January 15, 2026"
+          },
+          "context": {
+            "before": "Project completion: December 31, 2025",
+            "after": "Project completion: January 15, 2026"
+          },
+          "severity": "major",
+          "category": "timeline"
+        },
+        {
+          "id": "chg_3",
+          "type": "deletion",
+          "location": {
+            "document": 1,
+            "page": 7,
+            "section": "Risk Assessment",
+            "lineNumber": 124
+          },
+          "content": "Minor risk: Potential delay in third-party vendor delivery",
+          "context": {
+            "before": "Minor risk: Potential delay in third-party vendor delivery\nMitigation: Establish backup vendors",
+            "after": "Mitigation: Establish backup vendors"
+          },
+          "severity": "minor",
+          "category": "content"
+        },
+        {
+          "id": "chg_4",
+          "type": "addition",
+          "location": {
+            "document": 2,
+            "page": 8,
+            "section": "Success Metrics",
+            "lineNumber": 156
+          },
+          "content": "Track customer satisfaction score (CSAT) monthly",
+          "context": {
+            "before": "Monitor key performance indicators weekly",
+            "after": "Monitor key performance indicators weekly\nTrack customer satisfaction score (CSAT) monthly"
+          },
+          "severity": "minor",
+          "category": "metrics"
+        }
+      ],
+      "categoryBreakdown": {
+        "financial": 8,
+        "timeline": 5,
+        "content": 28,
+        "structure": 6
+      },
+      "diffUrl": "https://storage.example.com/comparisons/cmp_1a2b3c4d5e_diff.pdf",
+      "sideBySideUrl": "https://storage.example.com/comparisons/cmp_1a2b3c4d5e_sidebyside.pdf"
+    },
+    {
+      "id": "cmp_2b3c4d5e6f",
+      "documentId1": "doc_4d5e6f7g8h",
+      "documentId2": "doc_5e6f7g8h9i",
+      "document1Name": "Technical Specifications.pdf",
+      "document2Name": "Technical Specifications v2.pdf",
+      "userId": "usr_3c4d5e6f7g",
+      "comparisonType": "technical",
+      "status": "completed",
+      "createdAt": "2025-10-18T14:30:00Z",
+      "completedAt": "2025-10-18T14:32:45Z",
+      "summary": {
+        "totalChanges": 89,
+        "additions": 52,
+        "deletions": 18,
+        "modifications": 19,
+        "similarityScore": 0.72,
+        "changesPercentage": 28.5
+      },
+      "changes": [
+        {
+          "id": "chg_5",
+          "type": "modification",
+          "location": {
+            "document": 2,
+            "page": 12,
+            "section": "Performance Requirements",
+            "lineNumber": 234
+          },
+          "content": {
+            "original": "Maximum response time: 200ms",
+            "modified": "Maximum response time: 150ms"
+          },
+          "severity": "major",
+          "category": "technical"
+        }
+      ],
+      "categoryBreakdown": {
+        "technical": 56,
+        "structure": 12,
+        "content": 21
+      },
+      "diffUrl": "https://storage.example.com/comparisons/cmp_2b3c4d5e6f_diff.pdf",
+      "sideBySideUrl": "https://storage.example.com/comparisons/cmp_2b3c4d5e6f_sidebyside.pdf"
+    }
+  ],
+  "comparisonTypes": [
+    {
+      "type": "full",
+      "description": "Complete comparison including content, structure, and metadata"
+    },
+    {
+      "type": "structure",
+      "description": "Compare document structure and organization only"
+    },
+    {
+      "type": "content",
+      "description": "Compare text content, ignoring formatting"
+    },
+    {
+      "type": "metadata",
+      "description": "Compare document properties and metadata"
+    }
+  ],
+  "severityLevels": {
+    "critical": "Changes that significantly alter the document meaning or functionality",
+    "major": "Important changes that affect key sections or data",
+    "minor": "Small changes with limited impact",
+    "cosmetic": "Formatting or stylistic changes only"
+  }
+}

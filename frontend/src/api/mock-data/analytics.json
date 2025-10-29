@@ -1,0 +1,207 @@
+{
+  "analytics": {
+    "period": "month",
+    "startDate": "2025-09-20T00:00:00Z",
+    "endDate": "2025-10-20T23:59:59Z",
+    "users": {
+      "total": 87,
+      "active": 78,
+      "inactive": 9,
+      "new": 12,
+      "growth": 15.9,
+      "churnRate": 3.4,
+      "adminUsers": 5,
+      "regularUsers": 82
+    },
+    "documents": {
+      "total": 1247,
+      "uploaded": 156,
+      "deleted": 23,
+      "averageSize": 2097152,
+      "totalStorage": 2617245696,
+      "storageFormatted": "2.44 GB",
+      "byType": {
+        "pdf": 678,
+        "docx": 342,
+        "xlsx": 156,
+        "txt": 71
+      },
+      "byStatus": {
+        "processed": 1215,
+        "processing": 8,
+        "failed": 24
+      },
+      "processingStats": {
+        "averageTime": 12.5,
+        "successRate": 98.1
+      }
+    },
+    "chats": {
+      "total": 3842,
+      "thisMonth": 487,
+      "averagePerDocument": 3.1,
+      "mostActiveHour": 14,
+      "averageResponseTime": 1.8,
+      "totalQueries": 5234,
+      "averageConfidence": 0.89,
+      "byTimeOfDay": {
+        "morning": 1245,
+        "afternoon": 1987,
+        "evening": 456,
+        "night": 154
+      }
+    },
+    "comparisons": {
+      "total": 234,
+      "thisMonth": 28,
+      "completed": 218,
+      "processing": 3,
+      "failed": 13,
+      "averageSimilarityScore": 0.78,
+      "averageProcessingTime": 15.3,
+      "byType": {
+        "full": 156,
+        "content": 45,
+        "structure": 23,
+        "metadata": 10
+      }
+    },
+    "summaries": {
+      "total": 892,
+      "thisMonth": 103,
+      "byStyle": {
+        "executive": 456,
+        "technical": 234,
+        "simple": 145,
+        "bullet-points": 57
+      },
+      "byLength": {
+        "short": 234,
+        "medium": 512,
+        "long": 146
+      },
+      "averageConfidence": 0.91,
+      "averageProcessingTime": 4.2
+    },
+    "performance": {
+      "averageUploadTime": 2.3,
+      "averageProcessingTime": 12.5,
+      "averageChatResponseTime": 1.8,
+      "systemUptime": 99.87,
+      "apiResponseTime": 145,
+      "databaseResponseTime": 23
+    },
+    "engagement": {
+      "dailyActiveUsers": 45,
+      "weeklyActiveUsers": 67,
+      "monthlyActiveUsers": 78,
+      "averageSessionDuration": "42 minutes",
+      "averageActionsPerSession": 8.5,
+      "peakUsageHour": 14,
+      "peakUsageDay": "Tuesday"
+    },
+    "topUsers": [
+      {
+        "userId": "usr_2b3c4d5e6f",
+        "name": "John Doe",
+        "email": "user@example.com",
+        "totalDocuments": 45,
+        "totalChats": 128,
+        "totalComparisons": 15,
+        "totalSummaries": 38,
+        "activityScore": 95.5
+      },
+      {
+        "userId": "usr_3c4d5e6f7g",
+        "name": "Jane Smith",
+        "email": "jane.smith@example.com",
+        "totalDocuments": 38,
+        "totalChats": 112,
+        "totalComparisons": 12,
+        "totalSummaries": 29,
+        "activityScore": 88.2
+      },
+      {
+        "userId": "usr_4d5e6f7g8h",
+        "name": "Bob Wilson",
+        "email": "bob.wilson@example.com",
+        "totalDocuments": 32,
+        "totalChats": 95,
+        "totalComparisons": 8,
+        "totalSummaries": 24,
+        "activityScore": 78.6
+      },
+      {
+        "userId": "usr_5e6f7g8h9i",
+        "name": "Alice Johnson",
+        "email": "alice@example.com",
+        "totalDocuments": 28,
+        "totalChats": 87,
+        "totalComparisons": 6,
+        "totalSummaries": 21,
+        "activityScore": 71.3
+      },
+      {
+        "userId": "usr_6f7g8h9i0j",
+        "name": "Charlie Brown",
+        "email": "charlie@example.com",
+        "totalDocuments": 24,
+        "totalChats": 76,
+        "totalComparisons": 5,
+        "totalSummaries": 18,
+        "activityScore": 65.8
+      }
+    ],
+    "systemHealth": {
+      "status": "healthy",
+      "apiResponseTime": 145,
+      "databaseResponseTime": 23,
+      "storageUsage": 67.5,
+      "cpuUsage": 34.2,
+      "memoryUsage": 56.8,
+      "diskUsage": 42.3,
+      "activeConnections": 234,
+      "queuedJobs": 12
+    },
+    "revenue": {
+      "totalRevenue": 45600,
+      "thisMonth": 5200,
+      "averageRevenuePerUser": 52.41,
+      "growth": 18.5
+    },
+    "errors": {
+      "total": 145,
+      "byType": {
+        "upload_failed": 45,
+        "processing_failed": 38,
+        "chat_timeout": 28,
+        "comparison_error": 18,
+        "summarization_error": 16
+      },
+      "errorRate": 0.87
+    },
+    "trends": {
+      "userGrowth": [
+        {"date": "2025-09-20", "users": 75},
+        {"date": "2025-09-27", "users": 78},
+        {"date": "2025-10-04", "users": 81},
+        {"date": "2025-10-11", "users": 84},
+        {"date": "2025-10-18", "users": 87}
+      ],
+      "documentUploads": [
+        {"date": "2025-09-20", "uploads": 28},
+        {"date": "2025-09-27", "uploads": 32},
+        {"date": "2025-10-04", "uploads": 35},
+        {"date": "2025-10-11", "uploads": 38},
+        {"date": "2025-10-18", "uploads": 41}
+      ],
+      "chatActivity": [
+        {"date": "2025-09-20", "chats": 89},
+        {"date": "2025-09-27", "chats": 94},
+        {"date": "2025-10-04", "chats": 102},
+        {"date": "2025-10-11", "chats": 108},
+        {"date": "2025-10-18", "chats": 115}
+      ]
+    }
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "summaries": [
+    {
+      "id": "sum_1a2b3c4d5e",
+      "documentId": "doc_1a2b3c4d5e",
+      "documentName": "Project Proposal.pdf",
+      "userId": "usr_2b3c4d5e6f",
+      "style": "executive",
+      "length": "medium",
+      "content": "This project proposal outlines a comprehensive marketing strategy for Q4 2025 with a total budget of $450,000. The primary objectives include developing a robust marketing framework, increasing brand awareness by 30% through digital channels, and launching three new product lines by year-end.\n\nThe proposal details a phased approach spanning October through December 2025, with key milestones including market research completion by October 31, campaign launch by November 15, and final evaluation by December 31. The budget allocation prioritizes marketing and advertising ($200,000), product development ($150,000), and operational expenses ($75,000), with a $25,000 contingency fund.\n\nKey success metrics include a 30% increase in brand awareness, 25% improvement in customer engagement, and successful market expansion into two new geographic regions. The proposal identifies potential risks and mitigation strategies, ensuring project viability and alignment with organizational goals.",
+      "keyPoints": [
+        "Total project budget: $450,000",
+        "Target: 30% increase in brand awareness",
+        "Timeline: October - December 2025",
+        "Launch of three new product lines",
+        "Expansion to two new geographic regions",
+        "Phased implementation approach"
+      ],
+      "wordCount": 156,
+      "readingTime": "45 seconds",
+      "confidence": 0.94,
+      "createdAt": "2025-10-20T11:15:00Z",
+      "isLatest": true,
+      "metadata": {
+        "model": "gpt-4",
+        "processingTime": 3.5,
+        "sourcePages": [1, 2, 3, 4, 5, 12, 15]
+      }
+    },
+    {
+      "id": "sum_2b3c4d5e6f",
+      "documentId": "doc_1a2b3c4d5e",
+      "documentName": "Project Proposal.pdf",
+      "userId": "usr_2b3c4d5e6f",
+      "style": "bullet-points",
+      "length": "short",
+      "content": "• Q4 2025 Marketing Strategy\n• Budget: $450,000\n  - Marketing & Advertising: $200,000\n  - Product Development: $150,000\n  - Operations: $75,000\n  - Contingency: $25,000\n• Objectives:\n  - 30% brand awareness increase\n  - 3 new product launches\n  - Expand to 2 new regions\n  - 25% customer engagement improvement\n• Timeline: Oct-Dec 2025\n• Key Milestones:\n  - Market research: Oct 31\n  - Campaign launch: Nov 15\n  - Final evaluation: Dec 31",
+      "keyPoints": [
+        "Budget: $450,000",
+        "30% brand awareness increase",
+        "3 new product launches",
+        "2 new geographic regions",
+        "Q4 2025 timeline"
+      ],
+      "wordCount": 82,
+      "readingTime": "25 seconds",
+      "confidence": 0.91,
+      "createdAt": "2025-10-19T15:30:00Z",
+      "isLatest": false,
+      "metadata": {
+        "model": "gpt-4",
+        "processingTime": 2.1,
+        "sourcePages": [1, 2, 3, 12]
+      }
+    },
+    {
+      "id": "sum_3c4d5e6f7g",
+      "documentId": "doc_4d5e6f7g8h",
+      "documentName": "Technical Specifications.pdf",
+      "userId": "usr_3c4d5e6f7g",
+      "style": "technical",
+      "length": "long",
+      "content": "The Technical Specifications document provides comprehensive details for the next-generation product platform, encompassing system architecture, performance requirements, security protocols, and integration specifications.\n\nSystem Architecture: The platform utilizes a microservices-based architecture with containerized deployment using Kubernetes. Core components include an API gateway (maximum response time: 200ms), distributed caching layer (Redis), message queue (RabbitMQ), and polyglot persistence layer supporting both SQL (PostgreSQL) and NoSQL (MongoDB) databases.\n\nPerformance Requirements: The system must support 10,000 concurrent users with 99.9% uptime SLA. API endpoints must respond within 200ms for 95th percentile requests, with database queries optimized to complete within 50ms. The platform should handle 1,000 requests per second at peak load with horizontal scaling capabilities.\n\nSecurity: Implementation requires OAuth 2.0/OpenID Connect for authentication, AES-256 encryption for data at rest, TLS 1.3 for data in transit, and role-based access control (RBAC) for authorization. All sensitive data must be encrypted, with audit logging for compliance requirements.\n\nIntegration: The platform exposes RESTful APIs and GraphQL endpoints for third-party integrations. Webhook support enables real-time event notifications. The system includes comprehensive API documentation using OpenAPI 3.0 specification.\n\nInfrastructure: Cloud-native deployment on AWS using EC2, RDS, S3, and CloudFront. Infrastructure as Code (IaC) managed through Terraform with CI/CD pipelines via GitHub Actions.",
+      "keyPoints": [
+        "Microservices architecture with Kubernetes orchestration",
+        "Support for 10,000 concurrent users with 99.9% uptime",
+        "200ms API response time requirement",
+        "OAuth 2.0 authentication with AES-256 encryption",
+        "RESTful and GraphQL API endpoints",
+        "AWS cloud infrastructure with Terraform IaC"
+      ],
+      "wordCount": 234,
+      "readingTime": "1 minute 10 seconds",
+      "confidence": 0.97,
+      "createdAt": "2025-10-17T09:45:00Z",
+      "isLatest": true,
+      "metadata": {
+        "model": "gpt-4",
+        "processingTime": 5.8,
+        "sourcePages": [3, 5, 8, 12, 15, 18, 22, 28, 35]
+      }
+    },
+    {
+      "id": "sum_4d5e6f7g8h",
+      "documentId": "doc_5e6f7g8h9i",
+      "documentName": "Marketing Strategy.docx",
+      "userId": "usr_3c4d5e6f7g",
+      "style": "executive",
+      "length": "medium",
+      "content": "The 2025 Marketing Strategy outlines a comprehensive approach to strengthen brand position, expand market reach, and drive revenue growth through integrated digital and traditional marketing channels.\n\nStrategic Objectives include achieving 40% year-over-year revenue growth, expanding into three new market segments, and establishing thought leadership through content marketing. The strategy prioritizes customer acquisition cost (CAC) optimization and lifetime value (LTV) maximization.\n\nKey initiatives encompass multi-channel digital campaigns leveraging SEO, SEM, social media advertising, and influencer partnerships. Content strategy focuses on educational resources, case studies, and industry research to build brand authority. Event marketing includes participation in 12 major industry conferences and hosting quarterly webinar series.\n\nBudget allocation: Total marketing spend of $2.5M distributed across digital advertising (35%), content creation (25%), events and sponsorships (20%), marketing technology (15%), and brand development (5%). Performance tracking utilizes KPIs including MQLs, SQLs, conversion rates, and customer engagement metrics.",
+      "keyPoints": [
+        "Target: 40% year-over-year revenue growth",
+        "Expansion into 3 new market segments",
+        "Total marketing budget: $2.5M",
+        "Multi-channel digital campaign approach",
+        "Thought leadership through content marketing",
+        "12 industry conferences + quarterly webinars"
+      ],
+      "wordCount": 142,
+      "readingTime": "42 seconds",
+      "confidence": 0.93,
+      "createdAt": "2025-10-16T13:20:00Z",
+      "isLatest": true,
+      "metadata": {
+        "model": "gpt-4",
+        "processingTime": 4.2,
+        "sourcePages": [1, 2, 4, 6, 8, 12, 15]
+      }
+    }
+  ],
+  "summaryStyles": [
+    {
+      "style": "executive",
+      "description": "Concise, high-level overview suitable for executives and decision-makers",
+      "targetAudience": "C-level executives, senior management"
+    },
+    {
+      "style": "technical",
+      "description": "Detailed technical summary with specific terminology and specifications",
+      "targetAudience": "Engineers, technical teams, developers"
+    },
+    {
+      "style": "simple",
+      "description": "Easy-to-understand summary using plain language",
+      "targetAudience": "General audience, non-specialists"
+    },
+    {
+      "style": "bullet-points",
+      "description": "Key information presented in concise bullet-point format",
+      "targetAudience": "Quick reference, presentations"
+    }
+  ],
+  "lengthOptions": [
+    {
+      "length": "short",
+      "description": "1-2 paragraphs or 5-10 bullet points",
+      "estimatedWords": "50-100 words"
+    },
+    {
+      "length": "medium",
+      "description": "3-5 paragraphs or 10-15 bullet points",
+      "estimatedWords": "150-300 words"
+    },
+    {
+      "length": "long",
+      "description": "6+ paragraphs or 15+ bullet points",
+      "estimatedWords": "300-500 words"
+    }
+  ]
+}

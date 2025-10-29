@@ -1,0 +1,148 @@
+{
+  "documents": [
+    {
+      "id": "doc_1a2b3c4d5e",
+      "name": "Project Proposal.pdf",
+      "originalName": "Q4 2025 Project Proposal.pdf",
+      "size": 2048576,
+      "mimeType": "application/pdf",
+      "url": "https://storage.example.com/documents/doc_1a2b3c4d5e.pdf",
+      "thumbnailUrl": "https://storage.example.com/thumbnails/doc_1a2b3c4d5e.jpg",
+      "userId": "usr_2b3c4d5e6f",
+      "status": "processed",
+      "pageCount": 15,
+      "wordCount": 3500,
+      "uploadedAt": "2025-10-15T14:30:00Z",
+      "processedAt": "2025-10-15T14:31:22Z",
+      "tags": ["proposal", "client", "2025"],
+      "metadata": {
+        "author": "John Doe",
+        "createdDate": "2025-10-14T10:00:00Z",
+        "modifiedDate": "2025-10-15T09:30:00Z"
+      }
+    },
+    {
+      "id": "doc_2b3c4d5e6f",
+      "name": "Meeting Notes.docx",
+      "originalName": "Meeting Notes - Oct 2025.docx",
+      "size": 524288,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "url": "https://storage.example.com/documents/doc_2b3c4d5e6f.docx",
+      "thumbnailUrl": "https://storage.example.com/thumbnails/doc_2b3c4d5e6f.jpg",
+      "userId": "usr_2b3c4d5e6f",
+      "status": "processed",
+      "pageCount": 5,
+      "wordCount": 1200,
+      "uploadedAt": "2025-10-18T09:15:00Z",
+      "processedAt": "2025-10-18T09:15:45Z",
+      "tags": ["meeting", "notes"],
+      "metadata": {
+        "author": "John Doe",
+        "createdDate": "2025-10-18T08:00:00Z",
+        "modifiedDate": "2025-10-18T09:00:00Z"
+      }
+    },
+    {
+      "id": "doc_3c4d5e6f7g",
+      "name": "Budget Report.xlsx",
+      "originalName": "Q3 Budget Report 2025.xlsx",
+      "size": 1048576,
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "url": "https://storage.example.com/documents/doc_3c4d5e6f7g.xlsx",
+      "thumbnailUrl": null,
+      "userId": "usr_2b3c4d5e6f",
+      "status": "processed",
+      "pageCount": 8,
+      "wordCount": 0,
+      "uploadedAt": "2025-10-10T16:20:00Z",
+      "processedAt": "2025-10-10T16:21:10Z",
+      "tags": ["budget", "finance", "Q3"],
+      "metadata": {
+        "author": "Finance Team",
+        "createdDate": "2025-10-08T12:00:00Z",
+        "modifiedDate": "2025-10-10T15:30:00Z"
+      }
+    },
+    {
+      "id": "doc_4d5e6f7g8h",
+      "name": "Technical Specifications.pdf",
+      "originalName": "Product Technical Specifications v2.pdf",
+      "size": 3145728,
+      "mimeType": "application/pdf",
+      "url": "https://storage.example.com/documents/doc_4d5e6f7g8h.pdf",
+      "thumbnailUrl": "https://storage.example.com/thumbnails/doc_4d5e6f7g8h.jpg",
+      "userId": "usr_3c4d5e6f7g",
+      "status": "processed",
+      "pageCount": 42,
+      "wordCount": 8500,
+      "uploadedAt": "2025-10-05T11:00:00Z",
+      "processedAt": "2025-10-05T11:02:15Z",
+      "tags": ["technical", "specifications", "product"],
+      "metadata": {
+        "author": "Engineering Team",
+        "createdDate": "2025-09-28T10:00:00Z",
+        "modifiedDate": "2025-10-04T16:00:00Z"
+      }
+    },
+    {
+      "id": "doc_5e6f7g8h9i",
+      "name": "Marketing Strategy.docx",
+      "originalName": "2025 Marketing Strategy Plan.docx",
+      "size": 786432,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "url": "https://storage.example.com/documents/doc_5e6f7g8h9i.docx",
+      "thumbnailUrl": "https://storage.example.com/thumbnails/doc_5e6f7g8h9i.jpg",
+      "userId": "usr_3c4d5e6f7g",
+      "status": "processed",
+      "pageCount": 18,
+      "wordCount": 4200,
+      "uploadedAt": "2025-10-12T13:45:00Z",
+      "processedAt": "2025-10-12T13:46:30Z",
+      "tags": ["marketing", "strategy", "2025"],
+      "metadata": {
+        "author": "Jane Smith",
+        "createdDate": "2025-10-01T09:00:00Z",
+        "modifiedDate": "2025-10-12T12:00:00Z"
+      }
+    },
+    {
+      "id": "doc_6f7g8h9i0j",
+      "name": "Contract Template.pdf",
+      "originalName": "Standard Service Contract Template.pdf",
+      "size": 409600,
+      "mimeType": "application/pdf",
+      "url": "https://storage.example.com/documents/doc_6f7g8h9i0j.pdf",
+      "thumbnailUrl": "https://storage.example.com/thumbnails/doc_6f7g8h9i0j.jpg",
+      "userId": "usr_1a2b3c4d5e",
+      "status": "processed",
+      "pageCount": 6,
+      "wordCount": 1800,
+      "uploadedAt": "2025-09-25T10:15:00Z",
+      "processedAt": "2025-09-25T10:15:45Z",
+      "tags": ["legal", "contract", "template"],
+      "metadata": {
+        "author": "Legal Department",
+        "createdDate": "2025-09-20T14:00:00Z",
+        "modifiedDate": "2025-09-24T16:30:00Z"
+      }
+    }
+  ],
+  "statuses": {
+    "uploading": "File is being uploaded",
+    "processing": "File is being processed",
+    "processed": "File is ready for use",
+    "failed": "Processing failed",
+    "deleted": "File has been deleted"
+  },
+  "supportedMimeTypes": [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain"
+  ],
+  "maxFileSize": 10485760,
+  "storageQuota": {
+    "default": 1073741824,
+    "admin": 10737418240
+  }
+}
