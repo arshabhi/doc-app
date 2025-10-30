@@ -46,6 +46,9 @@ class Document(Base):
     owner = relationship("User", back_populates="documents")
     embeddings = relationship("Embedding", back_populates="document", cascade="all, delete-orphan")
 
+    # ✅ Add this line
+    summaries = relationship("Summary", back_populates="document", cascade="all, delete-orphan")
+
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
@@ -80,3 +83,21 @@ class Embedding(Base):
     created_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
 
     document = relationship("Document", back_populates="embeddings")
+
+
+class Summary(Base):
+    __tablename__ = "summaries"
+
+    id = sa.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    document_id = sa.Column(UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+
+    style = sa.Column(sa.String(64), default="executive")
+    length = sa.Column(sa.String(32), default="medium")
+    content = sa.Column(sa.Text, nullable=False)
+    key_points = sa.Column(sa.JSON, default=list)
+    word_count = sa.Column(sa.Integer)
+    confidence = sa.Column(sa.Float)
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    meta_data = sa.Column(sa.JSON, default=dict)
+
+    document = relationship("Document", back_populates="summaries")

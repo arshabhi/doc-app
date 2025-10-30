@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, chat, documents, users
+from app.api import auth, chat, documents, users, summarize
 from app.core.config import settings
 from app.db.session import init_db
 
@@ -27,12 +27,13 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
+app.include_router(summarize.router, prefix="/summarize", tags=["Summarization"])
 
 @app.on_event("startup")
 async def startup_event():
     await init_db()
     print("✅ Database initialized and app started successfully!")
 
-@app.get("/", tags=["Health"])
+@app.get("/health", tags=["Health"])
 async def root():
     return {"status": "ok", "message": "GenAI Chatbot API running 🚀"}

@@ -11,7 +11,7 @@ from app.services.document_service import process_and_store_document
 from app.core.security import get_current_user
 from uuid import UUID
 
-router = APIRouter(prefix="/api/documents", tags=["Documents"])
+router = APIRouter(tags=["Documents"])
 
 
 # ---------------------------
@@ -50,9 +50,26 @@ async def list_documents(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """List all documents for the current user (paginated)."""
     docs = await doc_crud.get_user_documents(db, current_user.id, limit=limit, offset=offset)
-    return docs
+
+    return {
+        "success": True,
+        "data": {
+            "documents": [
+                {
+                    "id": str(doc.id),
+                    "name": doc.filename,
+                    "uploadedAt": doc.uploaded_at,
+                    "mimeType": doc.content_type,
+                    "extractedText": doc.meta_data.get("text") if doc.meta_data else None,
+                    "summary": doc.meta_data.get("summary") if doc.meta_data else None,
+                    "status": "completed",
+                    "url": f"/api/documents/{doc.id}/download",
+                }
+                for doc in docs
+            ]
+        }
+    }
 
 
 # ---------------------------
