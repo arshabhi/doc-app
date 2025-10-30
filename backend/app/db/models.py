@@ -8,15 +8,30 @@ from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
+
     id = sa.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    name = sa.Column(sa.String(255), nullable=True)  # ✅ Added: display name
     email = sa.Column(sa.String(255), unique=True, nullable=False, index=True)
     hashed_password = sa.Column(sa.String(255), nullable=False)
     is_active = sa.Column(sa.Boolean(), default=True)
     is_superuser = sa.Column(sa.Boolean(), default=False)
     created_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
+    updated_at = sa.Column(sa.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Optional user customization / profile info
+    avatar_url = sa.Column(sa.String(512), nullable=True)
+    preferences = sa.Column(sa.JSON, default=lambda: {
+        "theme": "light",
+        "language": "en",
+        "notifications": True
+    })
+
+    # Relationships
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
     sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User id={self.id} email={self.email} active={self.is_active}>"
 
 
 class Document(Base):

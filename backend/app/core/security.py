@@ -63,6 +63,20 @@ async def create_access_token_from_refresh(refresh_token: str) -> Dict[str, str]
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
+def decode_token(token: str) -> Dict[str, Any]:
+    """
+    Decodes a JWT and returns its payload.
+    Raises HTTP 401 if invalid or expired.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return payload
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        ) from e
+
 
 # ✅ Token Data Schema
 class TokenData(BaseModel):

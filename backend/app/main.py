@@ -9,6 +9,7 @@ from app.db.session import init_db
 app = FastAPI(
     title="GenAI Conversational Chatbot API",
     description="Backend API for the Conversational RAG Chat Application",
+    root_path="/api",
     version="1.0.0"
 )
 

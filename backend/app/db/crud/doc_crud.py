@@ -12,8 +12,8 @@ async def create_document(db: AsyncSession, owner_id: UUID, filename: str, conte
     await db.refresh(doc)
     return doc
 
-async def get_user_documents(db: AsyncSession, owner_id: UUID):
-    q = select(Document).where(Document.owner_id == owner_id).order_by(Document.uploaded_at.desc())
+async def get_user_documents(db: AsyncSession, user_id: UUID, limit: int = 20, offset: int = 0):
+    q = select(Document).where(Document.owner_id == user_id).limit(limit).offset(offset)
     res = await db.execute(q)
     return res.scalars().all()
 
