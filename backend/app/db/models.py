@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -18,7 +19,6 @@ class User(Base):
     created_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
     updated_at = sa.Column(sa.DateTime(), default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Optional user customization / profile info
     avatar_url = sa.Column(sa.String(512), nullable=True)
     preferences = sa.Column(sa.JSON, default=lambda: {
         "theme": "light",
@@ -26,9 +26,10 @@ class User(Base):
         "notifications": True
     })
 
-    # Relationships
+    # ✅ Relationships
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
     sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+    comparisons = relationship("Comparison", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User id={self.id} email={self.email} active={self.is_active}>"
@@ -54,11 +55,14 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
     id = sa.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = sa.Column(UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    document_id = sa.Column(UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
     name = sa.Column(sa.String(255), default="Conversation")
+    meta_data = sa.Column(sa.JSON, default={})
     created_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
 
     user = relationship("User", back_populates="sessions")
     messages = relationship("Message", back_populates="session", cascade="all, delete-orphan")
+    document = relationship("Document")
 
 
 class Message(Base):
@@ -101,3 +105,59 @@ class Summary(Base):
     meta_data = sa.Column(sa.JSON, default=dict)
 
     document = relationship("Document", back_populates="summaries")
+
+
+class Comparison(Base):
+    __tablename__ = "comparisons"
+
+    id = sa.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = sa.Column(UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    document_id1 = sa.Column(UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="CASCADE"))
+    document_id2 = sa.Column(UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="CASCADE"))
+    comparison_type = sa.Column(sa.String(50))
+    status = sa.Column(sa.String(50), default="processing")
+    created_at = sa.Column(sa.DateTime, default=datetime.utcnow)
+    completed_at = sa.Column(sa.DateTime, nullable=True)
+    summary = sa.Column(sa.JSON, default=dict)
+    changes = sa.Column(sa.JSON, default=dict)
+    category_breakdown = sa.Column(sa.JSON, default=dict)
+    diff_url = sa.Column(sa.String(512))
+    side_by_side_url = sa.Column(sa.String(512))
+    meta_data = sa.Column(sa.JSON, default=dict) 
+
+    # ✅ Relationships
+    user = relationship("User", back_populates="comparisons")
+    document1 = relationship("Document", foreign_keys=[document_id1])
+    document2 = relationship("Document", foreign_keys=[document_id2])
+
+    def to_dict(self, includeDetails: bool = True):
+        base = {
+            "id": str(self.id),
+            "documentId1": str(self.document_id1) if self.document_id1 else None,
+            "documentId2": str(self.document_id2) if self.document_id2 else None,
+            "comparisonType": self.comparison_type,
+            "status": self.status,
+            "createdAt": self.created_at.isoformat(),
+            "completedAt": self.completed_at.isoformat() if self.completed_at else None,
+            "summary": self.summary or {},
+            "categoryBreakdown": self.category_breakdown or {},
+            "diffUrl": self.diff_url,
+            "sideBySideUrl": self.side_by_side_url,
+        }
+        if includeDetails:
+            base["changes"] = self.changes or {}
+        return base
+
+    def to_summary(self):
+        return {
+            "id": str(self.id),
+            "document1Name": self.summary.get("document1Name") if self.summary else None,
+            "document2Name": self.summary.get("document2Name") if self.summary else None,
+            "status": self.status,
+            "createdAt": self.created_at.isoformat(),
+            "summary": {
+                "totalChanges": (self.summary or {}).get("totalChanges"),
+                "similarityScore": (self.summary or {}).get("similarityScore"),
+            },
+        }
+    

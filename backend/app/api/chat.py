@@ -9,41 +9,38 @@ from app.db.schemas.chat import ChatRequest, ChatResponse
 from app.services.rag_pipeline import run_rag_pipeline
 from app.core.security import get_current_user
 from langchain_google_genai import ChatGoogleGenerativeAI
-
-router = APIRouter()
+from uuid import UUID
 from dotenv import load_dotenv
+
+router = APIRouter(tags=["Chat"])
+
 load_dotenv()
-
-# Load Gemini API key from environment
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 if not GEMINI_API_KEY:
     raise RuntimeError("❌ GEMINI_API_KEY not found in environment variables.")
 
-# Initialize Gemini LLM via LangChain wrapper
 gemini = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash-exp",
     google_api_key=GEMINI_API_KEY,
     temperature=0.2,
 )
 
-@router.post("/message", response_model=ChatResponse)
-async def chat_message(
+
+# ===========================================================
+# POST /api/chat/query
+# ===========================================================
+@router.post("/query", response_model=ChatResponse)
+async def chat_query(
     request: ChatRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """
-    Handles a new chat message with retrieval-augmented generation.
-    """
     try:
-        # Step 1: Get retrieved context + formulate the prompt
         llm_output, sources = await run_rag_pipeline(
             request.message, current_user.id, db, llm=gemini
         )
 
-        # Step 2: Log chat message and assistant response
-        await chat_crud.log_message(
+        log = await chat_crud.log_message(
             db,
             current_user.id,
             request.session_id,
@@ -51,9 +48,8 @@ async def chat_message(
             llm_output
         )
 
-        # Step 3: Return chat response
         return ChatResponse(
-            session_id=request.session_id,
+            session_id=log["session_id"],
             user_message=request.message,
             assistant_message=llm_output,
             sources=sources
@@ -61,3 +57,59 @@ async def chat_message(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat processing error: {e}")
+
+
+# ===========================================================
+# GET /api/chat/history/{document_id}
+# ===========================================================
+@router.get("/history/{document_id}")
+async def get_chat_history(
+    document_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    messages = await chat_crud.get_history_by_document(db, current_user.id, document_id)
+    return [
+        {
+            "id": msg.id,
+            "role": msg.role,
+            "content": msg.content,
+            "created_at": msg.created_at,
+        }
+        for msg in messages
+    ]
+
+
+# ===========================================================
+# DELETE /api/chat/history/{document_id}
+# ===========================================================
+@router.delete("/history/{document_id}")
+async def delete_chat_history(
+    document_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    ok = await chat_crud.delete_history_by_document(db, current_user.id, document_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="No chat sessions found for this document.")
+    return {"detail": "Chat history deleted successfully."}
+
+
+# ===========================================================
+# GET /api/chat/conversations
+# ===========================================================
+@router.get("/conversations")
+async def list_conversations(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    sessions = await chat_crud.list_conversations(db, current_user.id)
+    return [
+        {
+            "session_id": s.id,
+            "name": s.name,
+            "created_at": s.created_at,
+            "document_id": s.document_id,
+        }
+        for s in sessions
+    ]

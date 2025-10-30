@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, chat, documents, users, summarize
+from app.api import admin, auth, chat, documents, users, summarize, compare
 from app.core.config import settings
 from app.db.session import init_db
 
@@ -28,6 +28,8 @@ app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 app.include_router(summarize.router, prefix="/summarize", tags=["Summarization"])
+app.include_router(compare.router, prefix="/compare", tags=["Compare"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 
 @app.on_event("startup")
 async def startup_event():
