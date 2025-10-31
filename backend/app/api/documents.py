@@ -26,6 +26,7 @@ async def upload_document(
     """Upload and process a new document."""
     try:
         content = await file.read()
+        size = file.size
         content_str = content.decode("utf-8", errors="ignore")
 
         result = await process_and_store_document(
@@ -33,9 +34,11 @@ async def upload_document(
             owner_id=current_user.id,
             filename=file.filename,
             content=content_str,
+            size=size,
             metadata={}
         )
-        return {"status": "success", "details": {"id": str(result.id), "filename": result.filename}}
+        # return {"status": "success", "details": {"id": str(result.id), "filename": result.filename}}
+        return {"status": "success", "document": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
 

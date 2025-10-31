@@ -1,6 +1,6 @@
 # app/services/document_service.py
 
-import uuid
+from uuid import UUID
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import Document
@@ -8,9 +8,10 @@ from app.db.models import Document
 
 async def process_and_store_document(
     db: AsyncSession,
-    owner_id: str,
+    owner_id: UUID,
     filename: str,
     content: str,
+    size: int,
     metadata: dict = None
 ):
     """
@@ -20,10 +21,11 @@ async def process_and_store_document(
 
     # Ensure consistent JSON structure for `meta_data`
     doc = Document(
-        owner_id=owner_id,
+        owner_id=UUID(str(owner_id)),
         filename=filename,
         meta_data={"text": content.strip(), **metadata},
         uploaded_at=datetime.utcnow(),
+        size=size
     )
 
     db.add(doc)

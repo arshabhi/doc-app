@@ -72,7 +72,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
             <CardDescription className="mt-1">{document.name}</CardDescription>
           </div>
           {relevantMessages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={clearChat}>
+            <Button variant="outline" size="sm" onClick={() => documentId && clearChat(documentId)}>
               <Trash2 className="w-4 h-4 mr-2" />
               Clear Chat
             </Button>
