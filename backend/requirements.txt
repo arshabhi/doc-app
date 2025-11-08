@@ -23,8 +23,9 @@ python-jose[cryptography]>=3.3.0
 # ---------------------------
 # Data & Models
 # ---------------------------
-pydantic==2.9.2
-pydantic-settings==2.4.0
+pydantic[email]==2.9.2
+pydantic-settings==2.11.0
+greenlet==3.2.4
 
 # ---------------------------
 # LLM / AI Services

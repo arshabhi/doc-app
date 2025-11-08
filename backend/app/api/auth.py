@@ -77,7 +77,7 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
             "id": f"usr_{user.id}",
             "email": user.email,
             "name": user.name,
-            # "role": user.role,
+            "role": "admin" if user.is_superuser else "user",
             "createdAt": user.created_at.isoformat(),
             "updatedAt": user.updated_at.isoformat(),
         },

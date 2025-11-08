@@ -7,7 +7,7 @@ from app.core.dependencies import is_admin_user
 from uuid import UUID
 from datetime import datetime
 
-router = APIRouter(prefix="/api/admin", tags=["Admin"])
+router = APIRouter(prefix="", tags=["Admin"])
 
 # 1. GET /api/admin/users
 @router.get("/users")

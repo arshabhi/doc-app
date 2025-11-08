@@ -1,17 +1,23 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from app.db.models import User, Document, ChatSession, Comparison
 from typing import List, Optional
 from uuid import UUID
 
 # Get all users
-async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 20, search: Optional[str] = None):
-    q = select(User)
+async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 20, search: str = None):
+    query = select(User).options(
+        selectinload(User.documents),
+        selectinload(User.sessions)
+    )
+
     if search:
-        q = q.where(User.email.ilike(f"%{search}%") | User.name.ilike(f"%{search}%"))
-    q = q.offset(skip).limit(limit)
-    result = await db.execute(q)
-    return result.scalars().all()
+        query = query.where(User.email.ilike(f"%{search}%") | User.name.ilike(f"%{search}%"))
+
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().unique().all()
 
 # Get user by id
 async def get_user_by_id(db: AsyncSession, user_id: UUID):
