@@ -28,8 +28,7 @@ async def create_admin_user():
             email=ADMIN_EMAIL,
             hashed_password=hash_password(ADMIN_PASSWORD),
             is_active=True,
-            is_superuser=True,
-            role="admin"
+            is_superuser=True
         )
 
         session.add(admin_user)

@@ -30,7 +30,7 @@ async def startup_event():
 
 # ✅ Include API routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(users.router, prefix="/users", tags=["Users"])
+# app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 app.include_router(summarize.router, prefix="/summarize", tags=["Summarization"])

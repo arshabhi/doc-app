@@ -7,17 +7,45 @@ from uuid import UUID
 
 # Get all users
 async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 20, search: str = None):
-    query = select(User).options(
-        selectinload(User.documents),
-        selectinload(User.sessions)
+    # Subqueries for counts
+    doc_counts = (
+        select(Document.owner_id, func.count().label("doc_count"))
+        .group_by(Document.owner_id)
+        .subquery()
     )
 
-    if search:
-        query = query.where(User.email.ilike(f"%{search}%") | User.name.ilike(f"%{search}%"))
+    chat_counts = (
+        select(ChatSession.user_id, func.count().label("chat_count"))
+        .group_by(ChatSession.user_id)
+        .subquery()
+    )
 
+    # Base query joining aggregated counts
+    query = (
+        select(
+            User,
+            func.coalesce(doc_counts.c.doc_count, 0).label("doc_count"),
+            func.coalesce(chat_counts.c.chat_count, 0).label("chat_count")
+        )
+        .outerjoin(doc_counts, User.id == doc_counts.c.owner_id)
+        .outerjoin(chat_counts, User.id == chat_counts.c.user_id)
+    )
+
+    # Apply search filter
+    if search:
+        query = query.where(
+            or_(
+                User.email.ilike(f"%{search}%"),
+                User.name.ilike(f"%{search}%")
+            )
+        )
+
+    # Apply pagination
     query = query.offset(skip).limit(limit)
+
+    # Execute query
     result = await db.execute(query)
-    return result.scalars().unique().all()
+    return result.all()
 
 # Get user by id
 async def get_user_by_id(db: AsyncSession, user_id: UUID):
