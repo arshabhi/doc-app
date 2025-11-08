@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import admin, auth, chat, documents, users, summarize, compare
 from app.core.config import settings
 from app.db.session import init_db
-from app.core.startup import create_admin_user
+from app.core.startup import startup_tasks
 
 app = FastAPI(
     title="GenAI Conversational Chatbot API",
@@ -26,7 +26,10 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     await init_db()              # make sure DB connection is ready
-    await create_admin_user()    # ✅ create admin automatically
+    # await create_admin_user()    # ✅ create admin automatically
+    # await init_qdrant()
+    await startup_tasks()
+
 
 # ✅ Include API routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])

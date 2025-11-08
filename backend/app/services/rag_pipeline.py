@@ -16,6 +16,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from app.db.models import Document as DocumentModel
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from app.utils.qdrant import search_vectors
 
 logger = logging.getLogger(__name__)
 
@@ -26,108 +28,92 @@ async def run_rag_pipeline(
     user_message: str,
     user_id: str,
     db: AsyncSession,
-    llm=None,  # Optional injection from API (defaults to Gemini)
+    llm=None,  # Optional injection (default: Gemini)
 ) -> Tuple[str, List[Dict[str, Any]]]:
     """
-    Retrieval-Augmented Generation pipeline for a user's message.
-    Uses Gemini (via LangChain) for embeddings + LLM response.
+    Qdrant-powered Retrieval-Augmented Generation (RAG) pipeline.
+    - Uses HuggingFace embeddings for retrieval
+    - Uses Gemini for response generation
     """
 
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY not found in environment variables.")
-
-    # Step 1: Fetch user's documents
+    # ✅ Step 1: Fetch user's documents
     docs = await _get_user_documents(db, user_id)
     if not docs:
-        return (
-            "No documents found for your account. Please upload a document first.",
-            [],
-        )
+        return ("No documents found for your account. Please upload a document first.", [])
 
-    # Step 2: Prepare text chunks
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    texts, metadatas = [], []
+    logger.info(f"📄 Retrieved {len(docs)} documents for user {user_id}")
 
-    for doc in docs:
-        content = doc.meta_data.get("text") if doc.meta_data else None
-        if not content:
-            continue
+    # ✅ Step 2: Prepare embedding model
+    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-        for chunk in splitter.split_text(content):
-            texts.append(chunk)
-            metadatas.append({"filename": doc.filename, "owner_id": str(user_id)})
+    # ✅ Step 3: Embed the user query asynchronously
+    query_vector = await asyncio.to_thread(embedding_model.embed_query, user_message)
 
-    if not texts:
-        return ("No valid text found in your uploaded documents.", [])
-
-    logger.info("Text chunks prepared for RAG pipeline.")
-
-    # Step 3: Create embeddings + vector store
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001", 
-        google_api_key=GEMINI_API_KEY
+    # ✅ Step 4: Retrieve context chunks from Qdrant (filtered by owner_id)
+    qdrant_results = search_vectors(
+        query_vector=query_vector,
+        filters={"owner_id": str(user_id)},
+        limit=5,
+        mmr=True,
     )
-    vector_store = await asyncio.to_thread(
-        FAISS.from_texts, 
-        texts, 
-        embeddings, 
-        metadatas=metadatas
-    )
-    
-    # Step 4: Set up retriever
-    retriever = vector_store.as_retriever(search_kwargs={"k": 4})
+    if not qdrant_results:
+        return ("No relevant information found in your uploaded documents.", [])
 
-    # Step 5: Use Gemini model (inject or default)
+    logger.info(f"🔍 Retrieved {len(qdrant_results)} context chunks from Qdrant")
+
+    # ✅ Step 5: Construct context text
+    context_text = "\n\n".join(
+        [res["payload"].get("text", "") for res in qdrant_results if res.get("payload")]
+    )
+
+    # ✅ Step 6: Initialize Gemini if not provided
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if not GEMINI_API_KEY:
+        raise RuntimeError("❌ GEMINI_API_KEY not found in environment variables.")
+
     llm = llm or ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-exp",
+        model="gemini-2.5-flash",
         google_api_key=GEMINI_API_KEY,
         temperature=0.2,
     )
 
-    # Step 6: Create RAG prompt template
+    # ✅ Step 7: Create prompt
     prompt = ChatPromptTemplate.from_template("""
-Answer the question based only on the following context:
+You are an intelligent assistant helping summarize and reason over user documents.
+
+Answer the user's question based only on the following context:
 
 {context}
 
 Question: {question}
 
-Provide a detailed answer based on the context above. If the answer cannot be found in the context, say so.
+If the answer cannot be derived from the context, clearly say so.
 """)
 
-    # Step 7: Format documents helper function
-    def format_docs(docs):
-        return "\n\n".join(doc.page_content for doc in docs)
-
-    # Step 8: Create RAG chain using LCEL
+    # ✅ Step 8: Build LangChain RAG flow
     rag_chain = (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        {"context": lambda _: context_text, "question": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
     )
 
-    logger.info(f"Running Gemini RAG pipeline for user {user_id}: {user_message[:60]}...")
+    logger.info(f"🤖 Running RAG inference for user {user_id}...")
 
-    # Step 9: Get retrieved documents for sources
-    retrieved_docs = await asyncio.to_thread(
-        retriever.get_relevant_documents, 
-        user_message
-    )
-
-    # Step 10: Run LLM inference safely in background thread
+    # ✅ Step 9: Run inference safely in a background thread
     llm_output = await asyncio.to_thread(rag_chain.invoke, user_message)
 
-    # Step 11: Parse sources
+    # ✅ Step 10: Prepare response sources
     sources = [
         {
-            "filename": doc.metadata.get("filename", ""),
-            "excerpt": doc.page_content[:200],
+            "filename": res["payload"].get("filename", ""),
+            "excerpt": res["payload"].get("text", "")[:200],
+            "score": res["score"],
         }
-        for doc in retrieved_docs
+        for res in qdrant_results
     ]
 
+    logger.info("✅ RAG pipeline completed successfully.")
     return llm_output, sources
 
 
@@ -135,7 +121,7 @@ Provide a detailed answer based on the context above. If the answer cannot be fo
 # Helper: Load user documents
 # -----------------------------
 async def _get_user_documents(db: AsyncSession, user_id: str) -> List[DocumentModel]:
-    """Retrieve all documents for the given user."""
+    """Retrieve all documents belonging to a user."""
     stmt = select(DocumentModel).where(DocumentModel.owner_id == user_id)
     result = await db.execute(stmt)
     return result.scalars().all()

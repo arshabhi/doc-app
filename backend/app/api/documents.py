@@ -10,6 +10,7 @@ from app.db.crud import doc_crud
 from app.services.document_service import process_and_store_document
 from app.core.security import get_current_user
 from uuid import UUID
+from app.processing.extract_content import extract_content
 
 router = APIRouter(tags=["Documents"])
 
@@ -25,15 +26,16 @@ async def upload_document(
 ):
     """Upload and process a new document."""
     try:
-        content = await file.read()
         size = file.size
-        content_str = content.decode("utf-8", errors="ignore")
+        # content = await file.read()
+        # content_str = content.decode("utf-8", errors="ignore")
+        content = extract_content(file)
 
         result = await process_and_store_document(
             db=db,
             owner_id=current_user.id,
             filename=file.filename,
-            content=content_str,
+            content=content["content"],
             size=size,
             metadata={}
         )
