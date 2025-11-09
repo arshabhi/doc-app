@@ -1,4 +1,5 @@
 # app/db/crud/chat_crud.py
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from app.db.models import ChatSession, Message
@@ -30,34 +31,38 @@ async def create_session(
 # ------------------------------------------------------
 # Log user + assistant messages into session
 # ------------------------------------------------------
+# app/db/crud/chat_crud.py
 async def log_message(
     db: AsyncSession,
     user_id: UUID,
-    session_id: UUID | None,
+    session_id: UUID,
     user_content: str,
     assistant_content: str,
-    document_id: UUID | None = None
+    document_id: Optional[UUID] = None
 ):
-    # Ensure session exists or create new one
-    if session_id:
-        q = select(ChatSession).where(ChatSession.id == session_id)
-        res = await db.execute(q)
-        session = res.scalars().first()
-    else:
-        session = None
+    # Try existing session
+    q = select(ChatSession).where(ChatSession.id == session_id)
+    res = await db.execute(q)
+    sess = res.scalars().first()
 
-    if not session:
-        session = await create_session(db, user_id, document_id=document_id)
-        session_id = session.id
+    if not sess:
+        sess = ChatSession(
+            user_id=user_id,
+            document_id=document_id,   # ✅ link to document
+            name="Conversation"
+        )
+        db.add(sess)
+        await db.commit()
+        await db.refresh(sess)
+        session_id = sess.id
 
-    # Create message pairs
-    user_msg = Message(session_id=session_id, role="user", content=user_content, created_at=datetime.utcnow())
-    assistant_msg = Message(session_id=session_id, role="assistant", content=assistant_content, created_at=datetime.utcnow())
-
+    # Store both user & assistant messages
+    user_msg = Message(session_id=session_id, role="user", content=user_content)
+    assistant_msg = Message(session_id=session_id, role="assistant", content=assistant_content)
     db.add_all([user_msg, assistant_msg])
     await db.commit()
-    return {"session_id": session_id}
 
+    return {"session_id": session_id}
 
 # ------------------------------------------------------
 # Get all messages for a document

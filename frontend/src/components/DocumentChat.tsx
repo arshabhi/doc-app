@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Send, Bot, User, Trash2 } from 'lucide-react';
-import { ScrollArea } from './ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 
 interface DocumentChatProps {
   documentId: string | null;
@@ -14,15 +16,13 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
   const { getDocument, chatMessages, sendMessage, clearChat } = useDocuments();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const document = documentId ? getDocument(documentId) : null;
   const relevantMessages = chatMessages.filter(msg => msg.documentId === documentId);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [relevantMessages]);
 
   const handleSend = async () => {
@@ -43,6 +43,18 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleClearChat = async () => {
+    if (!documentId) return;
+    
+    try {
+      await clearChat(documentId);
+      toast.success('Chat history cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear chat:', error);
+      toast.error('Failed to clear chat history');
     }
   };
 
@@ -67,12 +79,12 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     <Card className="flex flex-col h-[600px]">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1 min-w-0">
             <CardTitle>Chat with Document</CardTitle>
-            <CardDescription className="mt-1">{document.name}</CardDescription>
+            <CardDescription className="mt-1 truncate">{document.name}</CardDescription>
           </div>
           {relevantMessages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => documentId && clearChat(documentId)}>
+            <Button variant="outline" size="sm" onClick={handleClearChat}>
               <Trash2 className="w-4 h-4 mr-2" />
               Clear Chat
             </Button>
@@ -80,7 +92,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-        <ScrollArea className="flex-1 px-6" ref={scrollRef}>
+        <div className="flex-1 overflow-y-auto px-6">
           <div className="space-y-4 py-4">
             {relevantMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -112,7 +124,15 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    )}
                     <p
                       className={`text-xs mt-1 ${
                         msg.role === 'user' ? 'text-indigo-200' : 'text-gray-500'
@@ -129,8 +149,9 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                 </div>
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+        </div>
         <div className="border-t p-4 flex-shrink-0">
           <div className="flex gap-2">
             <Input

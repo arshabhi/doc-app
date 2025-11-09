@@ -15,6 +15,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 interface DocumentListProps {
   onSelectDocument: (id: string) => void;
@@ -104,7 +110,16 @@ export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentL
                 <div className="flex items-start space-x-3 flex-1">
                   <FileText className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="truncate">{doc.name}</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="truncate cursor-help max-w-full">{doc.name}</p>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs break-all">{doc.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <HardDrive className="w-3 h-3" />

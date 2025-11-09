@@ -57,7 +57,8 @@ async def chat_query(
             current_user.id,
             request.session_id,
             request.message,
-            llm_output
+            llm_output,
+            document_id=request.document_id
         )
 
         # Generate IDs

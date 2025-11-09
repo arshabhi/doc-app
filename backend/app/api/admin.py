@@ -16,26 +16,30 @@ async def get_all_users(
     current_admin=Depends(is_admin_user),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1),
-    search: str = Query(None)
+    search: str | None = Query(None),
 ):
     skip = (page - 1) * limit
-    users = await admin_crud.get_all_users(db, skip, limit, search)
-    data = [{
-        "id": u.id,
-        "email": u.email,
-        "name": u.name,
-        "role": "admin" if u.is_superuser else "user",
-        "status": "active" if u.is_active else "inactive",
-        "avatar": f"https://api.dicebear.com/7.x/avataaars/svg?seed={u.name or 'User'}",
-        "createdAt": u.created_at,
-        "lastLogin": u.updated_at,
-        "stats": {
-            "totalDocuments": len(u.documents),
-            "totalChats": len(u.sessions),
-            "storageUsed": 0,
-            "lastActivity": u.updated_at,
-        }
-    } for u in users]
+    rows = await admin_crud.get_all_users(db, skip, limit, search)
+
+    data = []
+    for user, doc_count, storage_used, chat_count in rows:
+        data.append({
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": "admin" if user.is_superuser else "user",
+            "status": "active" if user.is_active else "inactive",
+            "avatar": f"https://api.dicebear.com/7.x/avataaars/svg?seed={user.name or 'User'}",
+            "createdAt": user.created_at,
+            "lastLogin": user.updated_at,
+            "stats": {
+                "totalDocuments": int(doc_count or 0),
+                "totalChats": int(chat_count or 0),
+                "storageUsed": int(storage_used or 0),
+                "lastActivity": user.updated_at,
+            },
+        })
+
     return {"success": True, "data": {"users": data}}
 
 # 2. GET /api/admin/users/:id
@@ -91,8 +95,9 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db), current
 
 # 5. GET /api/admin/analytics
 @router.get("/analytics")
-async def get_analytics(db: AsyncSession = Depends(get_db), current_admin=Depends(is_admin_user)):
-    analytics = await admin_crud.get_system_analytics(db)
+async def get_analytics(db: AsyncSession = Depends(get_db), current_admin=Depends(is_admin_user), 
+                        period: str = Query("month")):
+    analytics = await admin_crud.get_system_analytics(db, period=period)
     return {"success": True, "data": {"analytics": analytics}}
 
 # 6. GET /api/admin/documents
