@@ -137,9 +137,8 @@ def search_vectors(
         score_threshold=None,
         with_vectors=mmr,
     )
-    # print("results", results)
 
-    # MMR (optional) #TODO
+    # MMR (optional)
     if mmr:
         # Keep only results that have vectors available
         results_with_vecs = [r for r in results if getattr(r, "vector", None) is not None]

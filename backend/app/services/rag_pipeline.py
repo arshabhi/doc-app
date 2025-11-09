@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # -----------------------------
 async def run_rag_pipeline(
     user_message: str,
+    document_id: str,
     user_id: str,
     db: AsyncSession,
     llm=None,  # Optional injection (default: Gemini)
@@ -37,7 +38,7 @@ async def run_rag_pipeline(
     """
 
     # ✅ Step 1: Fetch user's documents
-    docs = await _get_user_documents(db, user_id)
+    docs = await _get_user_documents(db, user_id, document_id)
     if not docs:
         return ("No documents found for your account. Please upload a document first.", [])
 
@@ -52,7 +53,7 @@ async def run_rag_pipeline(
     # ✅ Step 4: Retrieve context chunks from Qdrant (filtered by owner_id)
     qdrant_results = search_vectors(
         query_vector=query_vector,
-        filters={"owner_id": str(user_id)},
+        filters={"owner_id": str(user_id), "document_id": str(document_id)},
         limit=5,
         mmr=True,
     )
@@ -120,8 +121,8 @@ If the answer cannot be derived from the context, clearly say so.
 # -----------------------------
 # Helper: Load user documents
 # -----------------------------
-async def _get_user_documents(db: AsyncSession, user_id: str) -> List[DocumentModel]:
+async def _get_user_documents(db: AsyncSession, user_id: str, document_id: str) -> List[DocumentModel]:
     """Retrieve all documents belonging to a user."""
-    stmt = select(DocumentModel).where(DocumentModel.owner_id == user_id)
+    stmt = select(DocumentModel).where(DocumentModel.owner_id == user_id).where(DocumentModel.id == document_id)
     result = await db.execute(stmt)
     return result.scalars().all()

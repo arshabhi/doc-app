@@ -48,7 +48,7 @@ async def chat_query(
 
         # Run RAG pipeline (retrieve + generate)
         llm_output, sources = await run_rag_pipeline(
-            request.message, current_user.id, db, llm=gemini
+            request.message, request.document_id, current_user.id, db, llm=gemini
         )
 
         # Log chat session and messages

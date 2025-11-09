@@ -25,9 +25,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    await init_db()              # make sure DB connection is ready
-    # await create_admin_user()    # ✅ create admin automatically
-    # await init_qdrant()
+    await init_db()
     await startup_tasks()
 
 
