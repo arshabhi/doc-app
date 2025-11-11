@@ -3,7 +3,7 @@ import { useDocuments } from '../context/DocumentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Send, Bot, User, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Trash2, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
@@ -58,6 +58,30 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     }
   };
 
+  const handleExportChat = () => {
+    if (!document || relevantMessages.length === 0) return;
+
+    let content = `Chat Conversation\n\nDocument: ${document.name}\nExported: ${new Date().toLocaleString()}\n\n`;
+    content += '─'.repeat(60) + '\n\n';
+
+    relevantMessages.forEach((msg, index) => {
+      const role = msg.role === 'user' ? 'You' : 'AI Assistant';
+      const timestamp = new Date(msg.timestamp).toLocaleTimeString();
+      content += `[${timestamp}] ${role}:\n${msg.content}\n\n`;
+    });
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${document.name.replace(/\.[^/.]+$/, '')}_chat.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Chat conversation exported successfully');
+  };
+
   if (!document) {
     return (
       <Card>
@@ -84,10 +108,16 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
             <CardDescription className="mt-1 truncate">{document.name}</CardDescription>
           </div>
           {relevantMessages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleClearChat}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Chat
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportChat}>
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleClearChat}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Chat
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>

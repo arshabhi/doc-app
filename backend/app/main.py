@@ -23,12 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    await init_db()
-    await startup_tasks()
-
-
 # ✅ Include API routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 # app.include_router(users.router, prefix="/users", tags=["Users"])
@@ -42,6 +36,7 @@ app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 async def startup_event():
     await init_db()
     print("✅ Database initialized and app started successfully!")
+    await startup_tasks()
 
 @app.get("/health", tags=["Health"])
 async def root():

@@ -4,7 +4,7 @@ import { DocumentList } from './DocumentList';
 import { DocumentChat } from './DocumentChat';
 import { DocumentCompare } from './DocumentCompare';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Upload, MessageSquare, GitCompare, FileText } from 'lucide-react';
+import { Upload, MessageSquare, GitCompare } from 'lucide-react';
 
 export function Dashboard() {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -19,14 +19,10 @@ export function Dashboard() {
       </div>
 
       <Tabs defaultValue="upload" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload" className="flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Upload
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Documents
           </TabsTrigger>
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
@@ -46,13 +42,6 @@ export function Dashboard() {
               selectedDocumentId={selectedDocumentId || undefined}
             />
           </div>
-        </TabsContent>
-
-        <TabsContent value="documents">
-          <DocumentList
-            onSelectDocument={setSelectedDocumentId}
-            selectedDocumentId={selectedDocumentId || undefined}
-          />
         </TabsContent>
 
         <TabsContent value="chat">
