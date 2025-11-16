@@ -6,6 +6,8 @@ import { Input } from './ui/input';
 import { FileText, Trash2, Calendar, HardDrive, Loader2, ZoomIn, ZoomOut, Download, Search, Filter, X } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -298,11 +300,24 @@ export function DocumentList({
                       title={doc.summary ? (expandedDocumentId === doc.id ? 'Collapse summary' : 'View summary') : 'Generate summary'}
                     >
                       {summarizingId === doc.id ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : expandedDocumentId === doc.id ? (
-                        <ZoomOut className="w-3 h-3" />
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          Summarizing...
+                        </>
+                      ) : doc.summary ? (
+                        expandedDocumentId === doc.id ? (
+                          <>
+                            <ZoomOut className="w-3 h-3 mr-1" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ZoomIn className="w-3 h-3 mr-1" />
+                            View Summary
+                          </>
+                        )
                       ) : (
-                        <ZoomIn className="w-3 h-3" />
+                        'Summarize'
                       )}
                     </Button>
                     <Button
@@ -318,10 +333,10 @@ export function DocumentList({
 
               {/* Expanded Summary View */}
               {expandedDocumentId === doc.id && doc.summary && (
-                <div className="border-t bg-white">
+                <div className="border-t bg-gray-50">
                   <div className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm text-gray-900">Document Summary</h4>
+                      <h4 className="text-xs text-gray-600 uppercase tracking-wide">Document Summary</h4>
                       <Button
                         variant="outline"
                         size="sm"
@@ -329,17 +344,35 @@ export function DocumentList({
                           e.stopPropagation();
                           handleExportSummary(doc);
                         }}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 h-7"
                       >
                         <Download className="w-3 h-3" />
-                        Export
+                        <span className="text-xs">Export</span>
                       </Button>
                     </div>
                     <Separator />
-                    <div className="prose prose-sm max-w-none">
-                      <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
-                        {doc.summary}
-                      </p>
+                    <div className="max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({children}) => <p className="mb-2.5 last:mb-0">{children}</p>,
+                            h1: ({children}) => <h1 className="text-xs font-semibold mt-3 mb-2 first:mt-0 text-gray-900">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-xs font-semibold mt-2.5 mb-1.5 first:mt-0 text-gray-900">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-xs font-semibold mt-2 mb-1.5 first:mt-0 text-gray-800">{children}</h3>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-2.5 space-y-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-2.5 space-y-1">{children}</ol>,
+                            li: ({children}) => <li className="ml-2">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                            em: ({children}) => <em className="italic">{children}</em>,
+                            code: ({children}) => <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px] font-mono">{children}</code>,
+                            pre: ({children}) => <pre className="bg-gray-200 p-2 rounded text-[11px] font-mono overflow-x-auto mb-2.5">{children}</pre>,
+                            blockquote: ({children}) => <blockquote className="border-l-2 border-gray-300 pl-3 italic mb-2.5">{children}</blockquote>,
+                          }}
+                        >
+                          {doc.summary}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 </div>
