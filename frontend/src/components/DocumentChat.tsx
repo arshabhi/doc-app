@@ -157,13 +157,29 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                     }`}
                   >
                     {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({children}) => <p className="mb-2.5 last:mb-0">{children}</p>,
+                            h1: ({children}) => <h1 className="text-xs font-semibold mt-3 mb-2 first:mt-0 text-gray-900">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-xs font-semibold mt-2.5 mb-1.5 first:mt-0 text-gray-900">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-xs font-semibold mt-2 mb-1.5 first:mt-0 text-gray-800">{children}</h3>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-2.5 space-y-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-2.5 space-y-1">{children}</ol>,
+                            li: ({children}) => <li className="ml-2">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                            em: ({children}) => <em className="italic">{children}</em>,
+                            code: ({children}) => <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px] font-mono">{children}</code>,
+                            pre: ({children}) => <pre className="bg-gray-200 p-2 rounded text-[11px] font-mono overflow-x-auto mb-2.5">{children}</pre>,
+                            blockquote: ({children}) => <blockquote className="border-l-2 border-gray-400 pl-3 italic mb-2.5">{children}</blockquote>,
+                          }}
+                        >
                           {msg.content}
                         </ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
                     )}
                     <p
                       className={`text-xs mt-1 ${
