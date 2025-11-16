@@ -47,7 +47,7 @@ async def create_summary(
             }
         }
 
-    summary_data = await generate_summary(req, doc)
+    summary_data = await generate_summary(req, current_user.id, doc)
 
     summary = Summary(
         id=summary_id,
@@ -166,7 +166,7 @@ async def custom_summary(
     if not doc or doc.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    summary_data = await generate_summary(req, doc, custom=True)
+    summary_data = await generate_summary(req, current_user.id, doc, custom=True)
     summary_id = f"sum_{uuid.uuid4().hex[:10]}"
 
     summary = Summary(

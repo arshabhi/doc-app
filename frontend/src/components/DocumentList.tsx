@@ -36,7 +36,10 @@ interface DocumentListProps {
   selectedDocumentId?: string;
 }
 
-export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentListProps) {
+export function DocumentList({ 
+  onSelectDocument, 
+  selectedDocumentId
+}: DocumentListProps) {
   const { documents, deleteDocument, summarizeDocument, getDocument } = useDocuments();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
@@ -183,7 +186,9 @@ export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentL
       <Card>
         <CardHeader>
           <CardTitle>Your Documents</CardTitle>
-          <CardDescription>{documents.length} document(s) uploaded</CardDescription>
+          <CardDescription>
+            {documents.length} document(s) uploaded
+          </CardDescription>
           
           {/* Search and Filter Controls */}
           <div className="space-y-3 mt-4">
@@ -258,16 +263,16 @@ export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentL
                 onClick={() => onSelectDocument(doc.id)}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
                     <FileText className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <p className="truncate cursor-help max-w-full">{doc.name}</p>
+                            <p className="truncate cursor-help">{doc.name}</p>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs break-all">{doc.name}</p>
+                          <TooltipContent side="top" className="max-w-md">
+                            <p className="break-all">{doc.name}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

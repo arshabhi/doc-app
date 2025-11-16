@@ -19,7 +19,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const document = documentId ? getDocument(documentId) : null;
-  const relevantMessages = chatMessages.filter(msg => msg.documentId === documentId);
+  const relevantMessages = documentId ? chatMessages.filter(msg => msg.documentId === documentId) : [];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,7 +74,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${document.name.replace(/\.[^/.]+$/, '')}_chat.txt`;
+    a.download = `chat_${document.name.replace(/\.[^/.]+$/, '')}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -105,10 +105,12 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <CardTitle>Chat with Document</CardTitle>
-            <CardDescription className="mt-1 truncate">{document.name}</CardDescription>
+            <CardDescription className="mt-1 truncate">
+              {document.name}
+            </CardDescription>
           </div>
           {relevantMessages.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-4">
               <Button variant="outline" size="sm" onClick={handleExportChat}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
