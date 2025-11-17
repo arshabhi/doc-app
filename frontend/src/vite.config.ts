@@ -6,6 +6,11 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '');
   
+  // Backend URL configuration from environment
+  const backendHost = env.BACKEND_HOST || 'localhost';
+  const backendPort = env.BACKEND_PORT || '8000';
+  const backendUrl = `http://${backendHost}:${backendPort}`;
+  
   return {
     plugins: [react(), tailwindcss()],
     server: {
@@ -13,7 +18,7 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: {
         '/api': {
-          target: 'http://localhost:8000',
+          target: backendUrl,
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path,

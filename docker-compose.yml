@@ -1,7 +1,9 @@
 version: "3.8"
 
 services:
-  # PostgreSQL — for your chat / SQL data
+  # ==========================
+  # PostgreSQL — Main DB
+  # ==========================
   postgres:
     image: postgres:16
     container_name: chatapp-db
@@ -12,10 +14,17 @@ services:
       POSTGRES_DB: chatapp
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d chatapp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Qdrant — for vector embeddings
+  # ==========================
+  # Qdrant — Vector DB
+  # ==========================
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
@@ -25,6 +34,47 @@ services:
       - "6334:6334" # gRPC
     volumes:
       - qdrant_data:/qdrant/storage
+
+  # ==========================
+  # Backend — FastAPI
+  # ==========================
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:pass@postgres:5432/chatapp
+      QDRANT_URL: http://qdrant:6333
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - qdrant
+
+  # ==========================
+  # Frontend — React (Vite)
+  # ==========================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app          # your source code
+      - /app/node_modules            # prevent node_modules from being overwritten
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+
 
 volumes:
   postgres_data:

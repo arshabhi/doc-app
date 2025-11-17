@@ -1,5 +1,6 @@
 # app/main.py
 
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import admin, auth, chat, documents, users, summarize, compare
@@ -34,9 +35,21 @@ app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 
 @app.on_event("startup")
 async def startup_event():
-    await init_db()
-    print("✅ Database initialized and app started successfully!")
+    MAX_RETRIES = 15
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            print(f"🔄 Initializing database (attempt {attempt+1}/{MAX_RETRIES})...")
+            await init_db()
+            print("✅ Database initialized successfully!")
+            break
+        except Exception as e:
+            print(f"⏳ Database not ready yet: {e}")
+            await asyncio.sleep(2)
+
     await startup_tasks()
+    print("🚀 App started successfully!")
+
 
 @app.get("/health", tags=["Health"])
 async def root():
