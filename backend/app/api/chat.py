@@ -33,15 +33,12 @@ gemini = ChatGoogleGenerativeAI(
 # ===========================================================
 @router.post("/query")
 async def chat_query(
-    request: ChatRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    request: ChatRequest, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """
     Handles user chat queries with Retrieval-Augmented Generation (RAG).
     Returns a structured JSON response compatible with the frontend.
     """
-
 
     try:
         start_time = time.time()
@@ -58,7 +55,7 @@ async def chat_query(
             request.session_id,
             request.message,
             llm_output,
-            document_id=request.document_id
+            document_id=request.document_id,
         )
 
         # Generate IDs
@@ -96,16 +93,13 @@ async def chat_query(
                 "metadata": {
                     "model": "gemini-2.5-flash",
                     "tokens": tokens_used,
-                    "processingTime": processing_time
-                }
-            }
+                    "processingTime": processing_time,
+                },
+            },
         }
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Chat processing error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Chat processing error: {str(e)}")
 
 
 # ===========================================================
@@ -113,9 +107,7 @@ async def chat_query(
 # ===========================================================
 @router.get("/history/{document_id}")
 async def get_chat_history(
-    document_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    document_id: UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     messages = await chat_crud.get_history_by_document(db, current_user.id, document_id)
     return [
@@ -134,9 +126,7 @@ async def get_chat_history(
 # ===========================================================
 @router.delete("/history/{document_id}")
 async def delete_chat_history(
-    document_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    document_id: UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     ok = await chat_crud.delete_history_by_document(db, current_user.id, document_id)
     if not ok:
@@ -149,8 +139,7 @@ async def delete_chat_history(
 # ===========================================================
 @router.get("/conversations")
 async def list_conversations(
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     sessions = await chat_crud.list_conversations(db, current_user.id)
     return [

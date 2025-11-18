@@ -11,16 +11,10 @@ from datetime import datetime
 # Create or fetch a chat session
 # ------------------------------------------------------
 async def create_session(
-    db: AsyncSession,
-    user_id: UUID,
-    name: str = "Conversation",
-    document_id: UUID | None = None
+    db: AsyncSession, user_id: UUID, name: str = "Conversation", document_id: UUID | None = None
 ):
     session = ChatSession(
-        user_id=user_id,
-        name=name,
-        document_id=document_id,
-        created_at=datetime.utcnow()
+        user_id=user_id, name=name, document_id=document_id, created_at=datetime.utcnow()
     )
     db.add(session)
     await db.commit()
@@ -38,7 +32,7 @@ async def log_message(
     session_id: UUID,
     user_content: str,
     assistant_content: str,
-    document_id: Optional[UUID] = None
+    document_id: Optional[UUID] = None,
 ):
     # Try existing session
     q = select(ChatSession).where(ChatSession.id == session_id)
@@ -48,8 +42,8 @@ async def log_message(
     if not sess:
         sess = ChatSession(
             user_id=user_id,
-            document_id=document_id,   # ✅ link to document
-            name="Conversation"
+            document_id=document_id,  # ✅ link to document
+            name="Conversation",
         )
         db.add(sess)
         await db.commit()
@@ -63,6 +57,7 @@ async def log_message(
     await db.commit()
 
     return {"session_id": session_id}
+
 
 # ------------------------------------------------------
 # Get all messages for a document
@@ -83,8 +78,7 @@ async def get_history_by_document(db: AsyncSession, user_id: UUID, document_id: 
 # ------------------------------------------------------
 async def delete_history_by_document(db: AsyncSession, user_id: UUID, document_id: UUID):
     q = select(ChatSession).where(
-        ChatSession.user_id == user_id,
-        ChatSession.document_id == document_id
+        ChatSession.user_id == user_id, ChatSession.document_id == document_id
     )
     sessions = (await db.execute(q)).scalars().all()
     if not sessions:
@@ -100,6 +94,10 @@ async def delete_history_by_document(db: AsyncSession, user_id: UUID, document_i
 # List all chat conversations for a user
 # ------------------------------------------------------
 async def list_conversations(db: AsyncSession, user_id: UUID):
-    q = select(ChatSession).where(ChatSession.user_id == user_id).order_by(ChatSession.created_at.desc())
+    q = (
+        select(ChatSession)
+        .where(ChatSession.user_id == user_id)
+        .order_by(ChatSession.created_at.desc())
+    )
     res = await db.execute(q)
     return res.scalars().all()

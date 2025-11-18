@@ -14,6 +14,7 @@ The system includes a FastAPI backend, a React (Vite) frontend, and PostgreSQL +
 - Extract text & metadata
 - Download documents
 - Generate summaries (multi-style, multi-length)
+- Chat over selected document
 - Compare two documents (structure, content, metadata, full diff)
 
 ## Chat & RAG
@@ -27,7 +28,6 @@ The system includes a FastAPI backend, a React (Vite) frontend, and PostgreSQL +
 - Manage all users
 - Admin analytics (users, documents, chats, processing health)
 - View system activity
-- Broadcast announcements
 
 ## Architecture
 - Full async FastAPI backend
@@ -48,7 +48,7 @@ The system includes a FastAPI backend, a React (Vite) frontend, and PostgreSQL +
 - SQLAlchemy (async)
 - Uvicorn
 - HuggingFace Transformers (embeddings)
-- LangChain (prompt chaining)
+- LangGraph workflows
 
 ### Databases
 - PostgreSQL
@@ -76,10 +76,14 @@ doc-app/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   ├── config/
 │   │   ├── context/
-│   │   ├── pages/
-│   │   ├── api/             # Axios clients
-│   │   └── main.jsx
+│   │   ├── services/
+│   │   ├── styles/
+│   │   ├── package.json
+│   │   ├── vite.config.ts
+│   │   ├── tailwind.config.ts
+│   │   └── main.tsx
 │   └── Dockerfile
 │
 ├── docker-compose.yml
@@ -89,20 +93,25 @@ doc-app/
 
 ## 🐳 Running with Docker (Recommended)
 ### 1. Build + start all services
+```
 docker compose up --build
-
+```
 
 Services started:
 - frontend → http://localhost:5173
 - backend → http://localhost:8000
-- postgres → localhost:5432
+- postgres → http://localhost:5432
 - qdrant → http://localhost:6333
 
 ### 2. Stop & remove all containers
+```
 docker compose down
+```
 
 ### 3. Rebuild without cache
+```
 docker compose build --no-cache
+```
 
 ## 🖥️ Run Backend Locally (without Docker)
 ```
@@ -111,9 +120,9 @@ uvicorn app.main:app --reload
 ```
 
 Backend runs at:
-👉 http://localhost:8000
+👉 `http://localhost:8000`
 
-👉 Swagger Docs: http://localhost:8000/docs
+👉 Swagger Docs: `http://localhost:8000/docs`
 
 ## 💻 Run Frontend Locally
 ```
@@ -124,7 +133,7 @@ npm run dev
 
 
 Frontend runs at:
-👉 http://localhost:5173
+👉 `http://localhost:5173`
 
 ## 🗃️ Run Postgres + Qdrant (locally only)
 
@@ -150,7 +159,9 @@ GEMINI_API_KEY=your_api_key_here
 ```
 
 ### Frontend .env example:
+```
 VITE_API_BASE_URL=http://backend:8000
+```
 
 ## 🧠 RAG Pipeline
 
@@ -183,3 +194,10 @@ Doc-App uses:
 
 Full API documentation is available at:
 👉 ```/docs``` (Swagger UI)
+
+## Upcoming Features and Enhancements
+- Support for multiple doc types (images)
+- Document Extraction pipeline
+- Download option in pdf/doc format
+- Compare Document API
+- Selection of embeddings and models

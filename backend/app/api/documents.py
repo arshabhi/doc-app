@@ -1,7 +1,4 @@
-from fastapi import (
-    APIRouter, UploadFile, File, Depends,
-    HTTPException, status, Response
-)
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.db.session import get_db
@@ -22,7 +19,7 @@ router = APIRouter(tags=["Documents"])
 async def upload_document(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """Upload and process a new document."""
     try:
@@ -37,7 +34,7 @@ async def upload_document(
             filename=file.filename,
             content=content["content"],
             size=size,
-            metadata={}
+            metadata={},
         )
         # return {"status": "success", "details": {"id": str(result.id), "filename": result.filename}}
         return {"status": "success", "document": result}
@@ -53,7 +50,7 @@ async def list_documents(
     limit: int = 20,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     docs = await doc_crud.get_user_documents(db, current_user.id, limit=limit, offset=offset)
 
@@ -73,7 +70,7 @@ async def list_documents(
                 }
                 for doc in docs
             ]
-        }
+        },
     }
 
 
@@ -82,9 +79,7 @@ async def list_documents(
 # ---------------------------
 @router.get("/{id}")
 async def get_document(
-    id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    id: UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Get details of a specific document."""
     doc = await doc_crud.get_document_by_id(db, id)
@@ -101,7 +96,7 @@ async def update_document(
     id: UUID,
     metadata: dict,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """Update document metadata."""
     doc = await doc_crud.get_document_by_id(db, id)
@@ -117,9 +112,7 @@ async def update_document(
 # ---------------------------
 @router.delete("/{id}")
 async def delete_document(
-    id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    id: UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Delete a document."""
     doc = await doc_crud.get_document_by_id(db, id)
@@ -135,9 +128,7 @@ async def delete_document(
 # ---------------------------
 @router.get("/{id}/download")
 async def download_document(
-    id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    id: UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Download a document's original content."""
     doc = await doc_crud.get_document_by_id(db, id)
@@ -150,5 +141,5 @@ async def download_document(
     return Response(
         content=doc.meta_data["text"],
         media_type="text/plain",
-        headers={"Content-Disposition": f"attachment; filename={doc.filename}"}
+        headers={"Content-Disposition": f"attachment; filename={doc.filename}"},
     )

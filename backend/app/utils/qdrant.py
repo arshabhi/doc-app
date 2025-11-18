@@ -5,6 +5,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 from app.core.config import settings
 
+
 # ==============================================================
 # Qdrant Client Initialization
 # ==============================================================
@@ -19,10 +20,9 @@ def get_qdrant_client() -> QdrantClient:
 # Collection Management
 # ==============================================================
 
+
 def create_collection(
-    collection_name: Optional[str] = None,
-    vector_size: int = 1536,
-    distance_metric: str = "COSINE"
+    collection_name: Optional[str] = None, vector_size: int = 1536, distance_metric: str = "COSINE"
 ) -> None:
     """
     Creates a Qdrant collection if it does not already exist.
@@ -62,10 +62,11 @@ def delete_collection(collection_name: Optional[str] = None) -> None:
 # Data Upsert / Push
 # ==============================================================
 
+
 def upsert_vectors(
     vectors: List[List[float]],
     payloads: List[Dict[str, Any]],
-    collection_name: Optional[str] = None
+    collection_name: Optional[str] = None,
 ) -> None:
     """
     Pushes vectors and their payloads to Qdrant.
@@ -93,6 +94,7 @@ def upsert_vectors(
 # ==============================================================
 # Fetch / Search (with optional filters and MMR)
 # ==============================================================
+
 
 def search_vectors(
     query_vector: List[float],
@@ -126,7 +128,6 @@ def search_vectors(
     # If MMR, fetch more and include vectors
     effective_limit = prefetch_k if prefetch_k is not None else (limit * 4 if mmr else limit)
 
-
     # Perform search
     results = client.search(
         collection_name=collection_name,
@@ -143,7 +144,9 @@ def search_vectors(
         # Keep only results that have vectors available
         results_with_vecs = [r for r in results if getattr(r, "vector", None) is not None]
         if len(results_with_vecs) > 1:
-            results = _apply_mmr(query_vector, results_with_vecs, lambda_val=mmr_lambda, top_k=limit)
+            results = _apply_mmr(
+                query_vector, results_with_vecs, lambda_val=mmr_lambda, top_k=limit
+            )
         else:
             # Not enough to re-rank, just trim to requested limit
             results = results[:limit]

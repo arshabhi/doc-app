@@ -18,8 +18,10 @@ from langchain_core.runnables import RunnablePassthrough
 from app.db.models import Document as DocumentModel
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from app.utils.qdrant import search_vectors
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
 
 # -----------------------------
 # RAG Pipeline Main Entry
@@ -45,7 +47,7 @@ async def run_rag_pipeline(
     logger.info(f"📄 Retrieved {len(docs)} documents for user {user_id}")
 
     # ✅ Step 2: Prepare embedding model
-    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    embedding_model = HuggingFaceEmbeddings(model_name=settings.HUGGINGFACE_EMBEDDING_MODEL)
 
     # ✅ Step 3: Embed the user query asynchronously
     query_vector = await asyncio.to_thread(embedding_model.embed_query, user_message)
@@ -121,8 +123,14 @@ If the answer cannot be derived from the context, clearly say so.
 # -----------------------------
 # Helper: Load user documents
 # -----------------------------
-async def _get_user_documents(db: AsyncSession, user_id: str, document_id: str) -> List[DocumentModel]:
+async def _get_user_documents(
+    db: AsyncSession, user_id: str, document_id: str
+) -> List[DocumentModel]:
     """Retrieve all documents belonging to a user."""
-    stmt = select(DocumentModel).where(DocumentModel.owner_id == user_id).where(DocumentModel.id == document_id)
+    stmt = (
+        select(DocumentModel)
+        .where(DocumentModel.owner_id == user_id)
+        .where(DocumentModel.id == document_id)
+    )
     result = await db.execute(stmt)
     return result.scalars().all()

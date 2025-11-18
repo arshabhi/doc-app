@@ -12,7 +12,7 @@ app = FastAPI(
     title="GenAI Conversational Chatbot API",
     description="Backend API for the Conversational RAG Chat Application",
     root_path="/api",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # ✅ CORS setup for frontend (React/Next.js)
@@ -32,6 +32,7 @@ app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 app.include_router(summarize.router, prefix="/summarize", tags=["Summarization"])
 app.include_router(compare.router, prefix="/compare", tags=["Compare"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+
 
 @app.on_event("startup")
 async def startup_event():

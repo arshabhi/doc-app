@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 from datetime import datetime
 
+
 # Base user fields
 class UserBase(BaseModel):
     email: EmailStr
@@ -24,6 +25,7 @@ class UserLogin(BaseModel):
 class LogoutRequest(BaseModel):
     refreshToken: str
 
+
 # Response schemas
 class UserOut(UserBase):
     id: UUID
@@ -34,6 +36,7 @@ class UserOut(UserBase):
 
     class Config:
         orm_mode = True
+
 
 class UserResponse(BaseModel):
     id: UUID
@@ -50,6 +53,7 @@ class UserResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 class TokenData(BaseModel):
     accessToken: str

@@ -13,11 +13,12 @@ CATEGORIES = ["financial", "timeline", "content", "structure"]
 # Core comparison engine (mock or diff-based)
 # ----------------------------------------------
 
+
 async def compare_documents(
     doc1_content: str,
     doc2_content: str,
     comparison_type: str = "full",
-    options: Dict[str, Any] = None
+    options: Dict[str, Any] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, int], list]:
     """
     Compare two document contents and return structured differences.
@@ -26,11 +27,7 @@ async def compare_documents(
     options = options or {}
 
     # 1️⃣ Simple diff using difflib for text comparison
-    diff = difflib.unified_diff(
-        doc1_content.splitlines(),
-        doc2_content.splitlines(),
-        lineterm=""
-    )
+    diff = difflib.unified_diff(doc1_content.splitlines(), doc2_content.splitlines(), lineterm="")
 
     changes = []
     additions = deletions = modifications = 0
@@ -38,24 +35,28 @@ async def compare_documents(
     for i, line in enumerate(diff):
         if line.startswith("+ ") and not line.startswith("+++"):
             additions += 1
-            changes.append({
-                "id": f"chg_{uuid4().hex[:6]}",
-                "type": "addition",
-                "location": {"document": 2, "lineNumber": i},
-                "content": line[2:],
-                "severity": random.choice(["minor", "major"]),
-                "category": random.choice(CATEGORIES),
-            })
+            changes.append(
+                {
+                    "id": f"chg_{uuid4().hex[:6]}",
+                    "type": "addition",
+                    "location": {"document": 2, "lineNumber": i},
+                    "content": line[2:],
+                    "severity": random.choice(["minor", "major"]),
+                    "category": random.choice(CATEGORIES),
+                }
+            )
         elif line.startswith("- ") and not line.startswith("---"):
             deletions += 1
-            changes.append({
-                "id": f"chg_{uuid4().hex[:6]}",
-                "type": "deletion",
-                "location": {"document": 1, "lineNumber": i},
-                "content": line[2:],
-                "severity": random.choice(["minor", "major"]),
-                "category": random.choice(CATEGORIES),
-            })
+            changes.append(
+                {
+                    "id": f"chg_{uuid4().hex[:6]}",
+                    "type": "deletion",
+                    "location": {"document": 1, "lineNumber": i},
+                    "content": line[2:],
+                    "severity": random.choice(["minor", "major"]),
+                    "category": random.choice(CATEGORIES),
+                }
+            )
         elif line.startswith("! "):
             modifications += 1
 
@@ -71,7 +72,7 @@ async def compare_documents(
         "deletions": deletions,
         "modifications": modifications,
         "similarityScore": similarity_score,
-        "changesPercentage": changes_percentage
+        "changesPercentage": changes_percentage,
     }
 
     # 3️⃣ Count per category
@@ -92,13 +93,23 @@ async def run_document_comparison(document1, document2, comparison_type="full", 
     document1, document2 should each have a `.meta_data['text']` or `.content` field.
     """
 
-    content1 = document1.meta_data.get("text") if hasattr(document1, "meta_data") else document1.get("text")
-    content2 = document2.meta_data.get("text") if hasattr(document2, "meta_data") else document2.get("text")
+    content1 = (
+        document1.meta_data.get("text")
+        if hasattr(document1, "meta_data")
+        else document1.get("text")
+    )
+    content2 = (
+        document2.meta_data.get("text")
+        if hasattr(document2, "meta_data")
+        else document2.get("text")
+    )
 
     if not content1 or not content2:
         raise ValueError("Documents must contain text for comparison.")
 
-    summary, category_breakdown, changes = await compare_documents(content1, content2, comparison_type, options)
+    summary, category_breakdown, changes = await compare_documents(
+        content1, content2, comparison_type, options
+    )
 
     result = {
         "id": str(uuid4()),
@@ -112,7 +123,7 @@ async def run_document_comparison(document1, document2, comparison_type="full", 
         "changes": changes,
         "categoryBreakdown": category_breakdown,
         "diffUrl": f"https://storage.example.com/comparisons/{uuid4().hex}_diff.pdf",
-        "sideBySideUrl": f"https://storage.example.com/comparisons/{uuid4().hex}_sidebyside.pdf"
+        "sideBySideUrl": f"https://storage.example.com/comparisons/{uuid4().hex}_sidebyside.pdf",
     }
 
     return result

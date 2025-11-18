@@ -18,15 +18,18 @@ from app.core.config import settings
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
+
 # Utility function to standardize responses
 def success_response(data: dict, status_code: int = 200):
     return {"success": True, "data": data}
 
+
 def error_response(code: str, message: str, status_code: int):
     raise HTTPException(
         status_code=status_code,
-        detail={"success": False, "error": {"code": code, "message": message}}
+        detail={"success": False, "error": {"code": code, "message": message}},
     )
+
 
 # ============================================================
 # 1️⃣ Register
@@ -60,6 +63,7 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     }
     return success_response(response, status_code=201)
 
+
 # ============================================================
 # 2️⃣ Login
 # ============================================================
@@ -89,6 +93,7 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
     }
     return success_response(response)
 
+
 # ============================================================
 # 3️⃣ Logout
 # ============================================================
@@ -97,6 +102,7 @@ async def logout(payload: LogoutRequest, token: str = Depends(oauth2_scheme)):
     # In stateless JWT, we can’t truly "invalidate" a token unless using a DB blacklist
     # Here we just simulate success
     return success_response({"message": "Logged out successfully"})
+
 
 # ============================================================
 # 4️⃣ Get Current User (/me)
@@ -137,6 +143,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     except Exception:
         error_response("INVALID_TOKEN", "Invalid or expired access token", 401)
 
+
 # ============================================================
 # 5️⃣ Refresh Token
 # ============================================================
@@ -164,8 +171,7 @@ async def refresh_token_endpoint(body: dict):
 
 @router.post("/login-form", response_model=TokenResponse)
 async def login_form(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ):
     """
     Login endpoint for Swagger UI and OAuth2Password flow.

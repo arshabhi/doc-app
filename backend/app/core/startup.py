@@ -10,9 +10,9 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 
 
-ADMIN_EMAIL = "admin@example.com"      # ✅ You can load from ENV too
-ADMIN_PASSWORD = "Admin@123"           # ✅ Change for production!
-ADMIN_NAME = "System Admin"
+ADMIN_EMAIL = settings.ADMIN_EMAIL
+ADMIN_PASSWORD = settings.ADMIN_PASSWORD
+ADMIN_NAME = settings.ADMIN_NAME
 
 
 async def create_admin_user():
@@ -30,7 +30,7 @@ async def create_admin_user():
             email=ADMIN_EMAIL,
             hashed_password=hash_password(ADMIN_PASSWORD),
             is_active=True,
-            is_superuser=True
+            is_superuser=True,
         )
 
         session.add(admin_user)
@@ -47,7 +47,7 @@ async def init_qdrant():
         client.create_collection(
             collection_name=collection,
             vectors_config=qmodels.VectorParams(
-                size=384,  # dimension for MiniLM-L6-v2
+                size=settings.HUGGINGFACE_EMBEDDING_DIM,  # dimension for MiniLM-L6-v2
                 distance=qmodels.Distance.COSINE,
             ),
         )
@@ -57,7 +57,7 @@ async def init_qdrant():
         client.create_collection(
             collection_name=collection,
             vectors_config=qmodels.VectorParams(
-                size=384,  # dimension for MiniLM-L6-v2
+                size=settings.HUGGINGFACE_EMBEDDING_DIM,  # dimension for MiniLM-L6-v2
                 distance=qmodels.Distance.COSINE,
             ),
         )

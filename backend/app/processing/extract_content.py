@@ -13,6 +13,7 @@ from openai import OpenAI
 # Initialize Qdrant client
 qdrant = QdrantClient(host="localhost", port=6333)
 
+
 def extract_content(file):
     """
     Extracts content from a file (UploadFile or local path)
@@ -27,7 +28,7 @@ def extract_content(file):
     else:
         raise TypeError("file must be a path or UploadFile")
 
-    extension = Path(filename).suffix.lower().lstrip('.')
+    extension = Path(filename).suffix.lower().lstrip(".")
 
     try:
         if extension in {"txt", "csv", "log"}:

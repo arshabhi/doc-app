@@ -3,12 +3,15 @@ from pydantic_settings import BaseSettings
 from typing import List
 import os
 
+
 class Settings(BaseSettings):
     APP_NAME: str = "GenAI Chatbot"
     DEBUG: bool = True
 
     # DB
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/genai_db"
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5432/genai_db"
+    )
 
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
@@ -23,16 +26,24 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
+    HUGGINGFACE_EMBEDDING_MODEL = os.getenv("HUGGINGFACE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    HUGGINGFACE_EMBEDDING_DIM = os.getenv("HUGGINGFACE_EMBEDDING_DIM", 384)
+
     VECTOR_DB_PATH: str = "./app/data/faiss_index"
 
     # ✅ Add Qdrant
     QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
     QDRANT_COLLECTION_NAME: str = os.getenv("QDRANT_COLLECTION_NAME", "documents")
 
+    # Admin Credentials
+    ADMIN_EMAIL = "admin@example.com"  # ✅ You can load from ENV too
+    ADMIN_PASSWORD = "Admin@123"  # ✅ Change for production!
+    ADMIN_NAME = "System Admin"
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
-        extra = "ignore"   
+        extra = "ignore"
+
 
 settings = Settings()

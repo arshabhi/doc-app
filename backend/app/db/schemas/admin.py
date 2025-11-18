@@ -3,6 +3,7 @@ from typing import Optional, List, Literal, Union, Dict
 from uuid import UUID
 from datetime import datetime
 
+
 # ---- User-related ----
 class AdminUserStats(BaseModel):
     totalDocuments: int
@@ -12,6 +13,7 @@ class AdminUserStats(BaseModel):
     storageUsed: int
     storageLimit: Optional[int] = None
     lastActivity: Optional[datetime] = None
+
 
 class AdminUserBase(BaseModel):
     id: UUID
@@ -24,9 +26,11 @@ class AdminUserBase(BaseModel):
     updatedAt: Optional[datetime] = None
     lastLogin: Optional[datetime] = None
 
+
 class AdminUserDetail(AdminUserBase):
     preferences: Optional[dict] = None
     stats: Optional[AdminUserStats] = None
+
 
 class AdminUserUpdateRequest(BaseModel):
     name: Optional[str]
@@ -35,9 +39,11 @@ class AdminUserUpdateRequest(BaseModel):
     status: Optional[Literal["active", "inactive"]]
     storageLimit: Optional[int]
 
+
 class AdminUserDeleteResponse(BaseModel):
     success: bool
     data: dict
+
 
 # ---- Analytics ----
 class AnalyticsData(BaseModel):
@@ -52,6 +58,7 @@ class AnalyticsData(BaseModel):
     topUsers: list
     systemHealth: dict
 
+
 # ---- Document List ----
 class AdminDocument(BaseModel):
     id: UUID
@@ -64,6 +71,7 @@ class AdminDocument(BaseModel):
     uploadedAt: datetime
     tags: Optional[List[str]] = []
 
+
 # ---- Activity ----
 class AdminActivity(BaseModel):
     id: UUID
@@ -74,6 +82,7 @@ class AdminActivity(BaseModel):
     timestamp: datetime
     metadata: Optional[dict] = {}
 
+
 # ---- Broadcast ----
 class BroadcastRequest(BaseModel):
     title: str
@@ -81,6 +90,7 @@ class BroadcastRequest(BaseModel):
     recipients: Union[Literal["all", "active", "inactive"], List[UUID]]
     type: Literal["info", "warning", "alert"]
     expiresAt: datetime
+
 
 class BroadcastResponse(BaseModel):
     success: bool

@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from app.db.models import Comparison
 
+
 async def create_comparison(
     db: AsyncSession,
     user_id: UUID,
@@ -33,8 +34,14 @@ async def get_comparison_by_id(db: AsyncSession, comparison_id: UUID):
     return result.scalars().first()
 
 
-async def get_comparison_history(db: AsyncSession, user_id: UUID, document_id: UUID = None, limit: int = 20, offset: int = 0):
-    query = select(Comparison).where(Comparison.user_id == user_id).order_by(Comparison.created_at.desc())
+async def get_comparison_history(
+    db: AsyncSession, user_id: UUID, document_id: UUID = None, limit: int = 20, offset: int = 0
+):
+    query = (
+        select(Comparison)
+        .where(Comparison.user_id == user_id)
+        .order_by(Comparison.created_at.desc())
+    )
     if document_id:
         query = query.where(
             (Comparison.document_id_1 == document_id) | (Comparison.document_id_2 == document_id)

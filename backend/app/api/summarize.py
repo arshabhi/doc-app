@@ -20,7 +20,7 @@ router = APIRouter(tags=["Summarization"])
 async def create_summary(
     req: SummaryCreateRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     doc = await db.get(Document, req.documentId)
     if not doc or doc.owner_id != current_user.id:
@@ -42,9 +42,9 @@ async def create_summary(
                     "status": "processing",
                     "createdAt": now.isoformat() + "Z",
                     "estimatedCompletionTime": (now + timedelta(minutes=2)).isoformat() + "Z",
-                    "message": "Summary is being generated. Use the summary ID to check status."
+                    "message": "Summary is being generated. Use the summary ID to check status.",
                 }
-            }
+            },
         }
 
     summary_data = await generate_summary(req, current_user.id, doc)
@@ -59,7 +59,7 @@ async def create_summary(
         word_count=summary_data["wordCount"],
         confidence=summary_data["confidence"],
         created_at=now,
-        meta_data=summary_data["meta_data"]
+        meta_data=summary_data["meta_data"],
     )
     db.add(summary)
     await db.commit()
@@ -72,14 +72,11 @@ async def create_summary(
 # -------------------------
 @router.get("/{document_id}", response_model=dict)
 async def get_summaries(
-    document_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    document_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     from sqlalchemy import select
-    result = await db.execute(
-        select(Summary).where(Summary.document_id == document_id)
-    )
+
+    result = await db.execute(select(Summary).where(Summary.document_id == document_id))
     summaries = result.scalars().all()
 
     if not summaries:
@@ -93,9 +90,7 @@ async def get_summaries(
 # -------------------------
 @router.get("/summary/{summary_id}", response_model=dict)
 async def get_summary(
-    summary_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    summary_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     summary = await db.get(Summary, summary_id)
     if not summary:
@@ -109,9 +104,7 @@ async def get_summary(
 # -------------------------
 @router.delete("/{summary_id}", response_model=dict)
 async def delete_summary(
-    summary_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    summary_id: str, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     summary = await db.get(Summary, summary_id)
     if not summary:
@@ -119,7 +112,10 @@ async def delete_summary(
 
     await db.delete(summary)
     await db.commit()
-    return {"success": True, "data": {"message": "Summary deleted successfully", "summaryId": summary_id}}
+    return {
+        "success": True,
+        "data": {"message": "Summary deleted successfully", "summaryId": summary_id},
+    }
 
 
 # -------------------------
@@ -127,9 +123,7 @@ async def delete_summary(
 # -------------------------
 @router.post("/batch", response_model=dict)
 async def batch_summarize(
-    req: dict,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    req: dict, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     now = datetime.utcnow()
     batch_id = f"batch_{uuid.uuid4().hex[:10]}"
@@ -137,19 +131,21 @@ async def batch_summarize(
     summaries = []
 
     for i, doc_id in enumerate(docs):
-        summaries.append({
-            "documentId": doc_id,
-            "status": "queued",
-            "estimatedCompletionTime": (now + timedelta(minutes=i+2)).isoformat() + "Z"
-        })
+        summaries.append(
+            {
+                "documentId": doc_id,
+                "status": "queued",
+                "estimatedCompletionTime": (now + timedelta(minutes=i + 2)).isoformat() + "Z",
+            }
+        )
 
     return {
         "success": True,
         "data": {
             "batchId": batch_id,
             "summaries": summaries,
-            "message": "Batch summarization initiated. Check individual document summaries for updates."
-        }
+            "message": "Batch summarization initiated. Check individual document summaries for updates.",
+        },
     }
 
 
@@ -158,9 +154,7 @@ async def batch_summarize(
 # -------------------------
 @router.post("/custom", response_model=dict)
 async def custom_summary(
-    req: dict,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    req: dict, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     doc = await db.get(Document, req.get("documentId"))
     if not doc or doc.owner_id != current_user.id:
@@ -178,7 +172,7 @@ async def custom_summary(
         word_count=summary_data.get("wordCount"),
         confidence=summary_data.get("confidence"),
         created_at=datetime.utcnow(),
-        meta_data=summary_data.get("meta_data", {})
+        meta_data=summary_data.get("meta_data", {}),
     )
     db.add(summary)
     await db.commit()

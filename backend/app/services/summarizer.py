@@ -15,15 +15,19 @@ from app.core.config import settings
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 class OrchestratorOutput(BaseModel):
     has_toc: bool
     toc_sections: List[str]
 
+
 class TocSelection(BaseModel):
     sections: List[str]
 
+
 class KeyPointsOutput(BaseModel):
     key_points: List[str]
+
 
 # ============================================================
 # ENV + LLM
@@ -44,10 +48,12 @@ llm = ChatGoogleGenerativeAI(
 # LangGraph State
 # ============================================================
 
+
 class SummaryState(dict):
     """
     Workflow state passed between LangGraph nodes.
     """
+
     user_id: str
     document_id: str
     raw_text: str | None
@@ -61,6 +67,7 @@ class SummaryState(dict):
 # Efficient Qdrant Scroll — Fetch First N Chunks (by chunk_index)
 # ============================================================
 
+
 async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
     """
     Retrieves the first N chunks (ordered by chunk_index) using Qdrant Scroll.
@@ -71,12 +78,10 @@ async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
 
     filter_condition = qmodels.Filter(
         must=[
-            qmodels.FieldCondition(
-                key="owner_id", match=qmodels.MatchValue(value=str(user_id))
-            ),
+            qmodels.FieldCondition(key="owner_id", match=qmodels.MatchValue(value=str(user_id))),
             qmodels.FieldCondition(
                 key="document_id", match=qmodels.MatchValue(value=str(document_id))
-            )
+            ),
         ]
     )
 
@@ -90,7 +95,7 @@ async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
             scroll_filter=filter_condition,
             limit=200,
             with_payload=True,
-            with_vectors=False,   # we only need metadata + text
+            with_vectors=False,  # we only need metadata + text
             offset=next_page,
         )
 
@@ -101,10 +106,7 @@ async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
             break
 
     # Extract valid payloads
-    valid = [
-        p.payload for p in all_points
-        if "chunk_index" in p.payload and "text" in p.payload
-    ]
+    valid = [p.payload for p in all_points if "chunk_index" in p.payload and "text" in p.payload]
 
     # Sort by chunk_index ascending
     ordered = sorted(valid, key=lambda x: x["chunk_index"])
@@ -118,6 +120,7 @@ async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
 # ============================================================
 # Agents
 # ============================================================
+
 
 async def orchestrator_agent(state: SummaryState):
     """
@@ -174,23 +177,17 @@ async def qdrant_retrieval_agent(state: SummaryState):
     Semantic retrieval of chunks when no TOC is detected.
     """
 
-    embedding_model = HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2"
-    )
+    embedding_model = HuggingFaceEmbeddings(model_name=settings.HUGGINGFACE_EMBEDDING_MODEL)
 
     query_vector = await asyncio.to_thread(
-        embedding_model.embed_query,
-        "main ideas of entire document"
+        embedding_model.embed_query, "main ideas of entire document"
     )
 
     from app.utils.qdrant import search_vectors
 
     results = search_vectors(
         query_vector=query_vector,
-        filters={
-            "owner_id": str(state["user_id"]),
-            "document_id": str(state["document_id"])
-        },
+        filters={"owner_id": str(state["user_id"]), "document_id": str(state["document_id"])},
         limit=5,
         mmr=True,
     )
@@ -226,7 +223,6 @@ Provide a structured summary with:
 
 
 async def extract_key_points(summary_text: str) -> list[str]:
-    
     structured_llm = llm.with_structured_output(KeyPointsOutput)
 
     prompt = f"""
@@ -238,6 +234,7 @@ Summary:
 
     result: KeyPointsOutput = await structured_llm.ainvoke(prompt)
     return result.key_points
+
 
 # ============================================================
 # LangGraph Workflow
@@ -252,8 +249,10 @@ workflow.add_node("summarizer", summarizer_agent)
 
 workflow.set_entry_point("orchestrator")
 
+
 def select_path(state: SummaryState):
     return "toc_agent" if state["has_toc"] else "qdrant_agent"
+
 
 workflow.add_conditional_edges(
     "orchestrator",
@@ -274,6 +273,7 @@ graph = workflow.compile()
 # ============================================================
 # Final User-Facing Summary Function
 # ============================================================
+
 
 async def generate_summary(req, user_id, doc, custom=False):
     """
@@ -301,7 +301,6 @@ async def generate_summary(req, user_id, doc, custom=False):
 
     summary_text = result.get("unified_summary", "")
     chunks = result.get("retrieved_chunks", [])
-
 
     # Extract chunk indices
     source_chunks = []

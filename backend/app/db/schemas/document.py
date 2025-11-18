@@ -4,6 +4,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import Optional
 
+
 class DocumentOut(BaseModel):
     id: UUID
     filename: str

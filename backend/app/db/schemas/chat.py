@@ -9,6 +9,7 @@ from datetime import datetime
 # Core Request / Response Models
 # ===========================================================
 
+
 class ChatRequest(BaseModel):
     session_id: Optional[UUID] = None
     message: str
@@ -25,6 +26,7 @@ class ChatResponse(BaseModel):
 # ===========================================================
 # Message / History Models
 # ===========================================================
+
 
 class MessageSchema(BaseModel):
     id: UUID
@@ -44,6 +46,7 @@ class ChatHistoryResponse(BaseModel):
 # ===========================================================
 # Conversation Listing Models
 # ===========================================================
+
 
 class ConversationSchema(BaseModel):
     session_id: UUID

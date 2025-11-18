@@ -13,14 +13,10 @@ from app.db.models import User as UserModel
 from pydantic import BaseModel
 
 # ✅ Use Argon2 instead of bcrypt
-pwd_context = CryptContext(
-    schemes=["argon2"],
-    deprecated="auto"
-)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login-form")
-
 
 
 # ✅ Password Hashing / Verification (no length limit now)
@@ -35,18 +31,20 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ✅ JWT Token Utilities
 def create_access_token(subject: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     to_encode = {
-        "exp": datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)),
+        "exp": datetime.utcnow()
+        + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)),
         "iat": datetime.utcnow(),
-        "sub": subject.get("sub")
+        "sub": subject.get("sub"),
     }
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(subject: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     to_encode = {
-        "exp": datetime.utcnow() + (expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)),
+        "exp": datetime.utcnow()
+        + (expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)),
         "iat": datetime.utcnow(),
-        "sub": subject.get("sub")
+        "sub": subject.get("sub"),
     }
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -61,7 +59,10 @@ async def create_access_token_from_refresh(refresh_token: str) -> Dict[str, str]
         refresh = create_refresh_token({"sub": sub})
         return {"access_token": access, "refresh_token": refresh}
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+
 
 def decode_token(token: str) -> Dict[str, Any]:
     """
@@ -85,8 +86,7 @@ class TokenData(BaseModel):
 
 # ✅ User Authentication Dependency
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db)
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
 ) -> UserModel:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -16,7 +16,7 @@ from app.db.schemas.compare import (
     CompareDeleteResponse,
     CompareBatchRequest,
     CompareBatchResponse,
-    ComparisonRequest
+    ComparisonRequest,
 )
 
 router = APIRouter(tags=["Compare"])
@@ -26,11 +26,12 @@ router = APIRouter(tags=["Compare"])
 # 1. POST /api/compare
 # ===========================================================
 
+
 @router.post("")
 async def compare_documents_api(
     request: ComparisonRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     # Fetch both documents
     doc1 = await db.get(Document, request.documentId1)
@@ -39,16 +40,13 @@ async def compare_documents_api(
         raise HTTPException(status_code=404, detail="One or both documents not found")
 
     # Run comparison
-    result = await run_document_comparison(doc1, doc2, request.comparisonType, request.options.dict())
+    result = await run_document_comparison(
+        doc1, doc2, request.comparisonType, request.options.dict()
+    )
 
     # Persist
     comparison = await compare_crud.create_comparison(
-        db,
-        current_user.id,
-        doc1.id,
-        doc2.id,
-        request.comparisonType,
-        meta_data=result
+        db, current_user.id, doc1.id, doc2.id, request.comparisonType, meta_data=result
     )
 
     return {"success": True, "data": {"comparison": result}}
@@ -62,7 +60,7 @@ async def get_comparison_result(
     id: uuid.UUID,
     includeDetails: bool = Query(True),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """
     Get comparison results by ID.
@@ -85,7 +83,7 @@ async def get_comparison_history(
     limit: int = Query(20, le=100),
     documentId: uuid.UUID | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """
     Get comparison history for the current user.
@@ -121,9 +119,7 @@ async def get_comparison_history(
 # ===========================================================
 @router.delete("/{id}", response_model=CompareDeleteResponse)
 async def delete_comparison(
-    id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """
     Delete a comparison result.
@@ -137,7 +133,10 @@ async def delete_comparison(
     await db.delete(cmp)
     await db.commit()
 
-    return {"success": True, "data": {"message": "Comparison deleted successfully", "comparisonId": str(id)}}
+    return {
+        "success": True,
+        "data": {"message": "Comparison deleted successfully", "comparisonId": str(id)},
+    }
 
 
 # ===========================================================
@@ -147,7 +146,7 @@ async def delete_comparison(
 async def batch_compare_documents(
     request: CompareBatchRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """
     Compare multiple document pairs in batch mode.
@@ -156,16 +155,13 @@ async def batch_compare_documents(
     batch_id = f"batch_{uuid.uuid4().hex[:10]}"
     for cmp_req in request.comparisons:
         cmp_id = f"cmp_{uuid.uuid4().hex[:10]}"
-        comparisons.append({
-            "id": cmp_id,
-            "status": "queued"
-        })
+        comparisons.append({"id": cmp_id, "status": "queued"})
 
     return {
         "success": True,
         "data": {
             "batchId": batch_id,
             "comparisons": comparisons,
-            "message": "Batch comparison initiated. Check status for updates."
+            "message": "Batch comparison initiated. Check status for updates.",
         },
     }

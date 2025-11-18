@@ -9,11 +9,9 @@ from app.db.schemas.user import UserOut
 
 router = APIRouter()
 
+
 @router.get("/me", response_model=UserOut)
-async def get_profile(
-    current_user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
+async def get_profile(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """
     Fetch current user profile info
     """

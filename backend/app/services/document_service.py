@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import Document
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
+
 # from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.config import settings
@@ -48,7 +49,7 @@ async def process_and_store_document(
     await db.refresh(doc)
 
     # 2️⃣ Initialize SentenceTransformer embeddings
-    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    embedding_model = HuggingFaceEmbeddings(model_name=settings.HUGGINGFACE_EMBEDDING_MODEL)
 
     # Split into manageable chunks
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
@@ -57,14 +58,17 @@ async def process_and_store_document(
     # Compute embeddings asynchronously (offload to thread pool)
     vectors = await asyncio.to_thread(embedding_model.embed_documents, chunks)
 
-    payloads = [{
-                "document_id": str(doc.id),
-                "owner_id": str(owner_id),
-                "chunk_index": idx,
-                "filename": filename,
-                "text": chunk,
-            } for idx, chunk in enumerate(chunks)]
-    
+    payloads = [
+        {
+            "document_id": str(doc.id),
+            "owner_id": str(owner_id),
+            "chunk_index": idx,
+            "filename": filename,
+            "text": chunk,
+        }
+        for idx, chunk in enumerate(chunks)
+    ]
+
     upsert_vectors(vectors=vectors, payloads=payloads)
 
     # 3️⃣ Push to Qdrant
@@ -95,4 +99,3 @@ async def process_and_store_document(
     # print(f"📄 Stored {len(chunks)} chunks from '{filename}' into Qdrant.")
 
     return doc
-
