@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
-    HUGGINGFACE_EMBEDDING_MODEL = os.getenv("HUGGINGFACE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-    HUGGINGFACE_EMBEDDING_DIM = os.getenv("HUGGINGFACE_EMBEDDING_DIM", 384)
+    HUGGINGFACE_EMBEDDING_MODEL: str = os.getenv("HUGGINGFACE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    HUGGINGFACE_EMBEDDING_DIM: int = os.getenv("HUGGINGFACE_EMBEDDING_DIM", 384)
 
     VECTOR_DB_PATH: str = "./app/data/faiss_index"
 
@@ -36,9 +36,9 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION_NAME: str = os.getenv("QDRANT_COLLECTION_NAME", "documents")
 
     # Admin Credentials
-    ADMIN_EMAIL = "admin@example.com"  # ✅ You can load from ENV too
-    ADMIN_PASSWORD = "Admin@123"  # ✅ Change for production!
-    ADMIN_NAME = "System Admin"
+    ADMIN_EMAIL: str = "admin@example.com"  # ✅ You can load from ENV too
+    ADMIN_PASSWORD: str = "Admin@123"  # ✅ Change for production!
+    ADMIN_NAME: str = "System Admin"
 
     class Config:
         env_file = ".env"
