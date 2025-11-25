@@ -31,13 +31,13 @@ class Settings(BaseSettings):
 
     VECTOR_DB_PATH: str = "./app/data/faiss_index"
 
-    # ✅ Add Qdrant
+    # Qdrant
     QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
     QDRANT_COLLECTION_NAME: str = os.getenv("QDRANT_COLLECTION_NAME", "documents")
 
     # Admin Credentials
-    ADMIN_EMAIL: str = "admin@example.com"  # ✅ You can load from ENV too
-    ADMIN_PASSWORD: str = "Admin@123"  # ✅ Change for production!
+    ADMIN_EMAIL: str = "admin@example.com"
+    ADMIN_PASSWORD: str = "Admin@123"
     ADMIN_NAME: str = "System Admin"
 
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     MINIO_SUMMARY_BUCKET: str = os.getenv("MINIO_SUMMARY_BUCKET", "summaries")
     MINIO_COMPARISON_BUCKET: str = os.getenv("MINIO_COMPARISON_BUCKET", "comparisons")
 
+    # ✅ NEW — Needed for browser access
+    MINIO_INTERNAL_ENDPOINT: str = os.getenv("MINIO_INTERNAL_ENDPOINT", "minio:9000")
+    MINIO_PUBLIC_ENDPOINT: str = os.getenv("MINIO_PUBLIC_ENDPOINT", "localhost:9000")
 
     class Config:
         env_file = ".env"

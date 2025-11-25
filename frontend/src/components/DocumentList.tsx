@@ -42,10 +42,11 @@ export function DocumentList({
   onSelectDocument, 
   selectedDocumentId
 }: DocumentListProps) {
-  const { documents, deleteDocument, summarizeDocument, getDocument } = useDocuments();
+  const { documents, deleteDocument, summarizeDocument, getDocument, downloadDocument } = useDocuments();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [summarizingId, setSummarizingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [expandedDocumentId, setExpandedDocumentId] = useState<string | null>(null);
   
   // Search and filter states
@@ -109,6 +110,19 @@ export function DocumentList({
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success('Summary exported successfully');
+  };
+
+  const handleDownloadDocument = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDownloadingId(id);
+    try {
+      await downloadDocument(id);
+      toast.success('Document downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download document');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -318,6 +332,19 @@ export function DocumentList({
                         )
                       ) : (
                         'Summarize'
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDownloadDocument(doc.id, e)}
+                      disabled={downloadingId === doc.id}
+                      title="Download document"
+                    >
+                      {downloadingId === doc.id ? (
+                        <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 text-indigo-600" />
                       )}
                     </Button>
                     <Button

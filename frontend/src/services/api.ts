@@ -130,8 +130,12 @@ class APIClient {
       );
     }
 
+    console.log('Raw API response:', data);
+    
     // Handle both wrapped ({success: true, data: {...}}) and direct responses
-    return (data.data !== undefined ? data.data : data) as T;
+    const result = (data.data !== undefined ? data.data : data) as T;
+    console.log('Unwrapped result:', result);
+    return result;
   }
 
   private async refreshAccessToken(): Promise<boolean> {
@@ -196,7 +200,9 @@ class APIClient {
         body: formData,
       });
 
-      return this.handleResponse<T>(response);
+      const result = await this.handleResponse<T>(response);
+      console.log('Upload file response after handling:', result);
+      return result;
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
@@ -247,8 +253,8 @@ export interface AuthResponse {
 export interface Document {
   id: string;
   name: string;
-  filename:string;
   originalName: string;
+  filename?: string;
   size: number;
   mimeType: string;
   url: string;
@@ -353,6 +359,13 @@ export const authAPI = {
       email,
       password,
     });
+    
+    // Validate response structure
+    if (!response || !response.tokens || !response.tokens.accessToken) {
+      console.error('Invalid auth response structure:', response);
+      throw new APIError('INVALID_RESPONSE', 'Invalid authentication response from server');
+    }
+    
     TokenManager.setTokens(
       response.tokens.accessToken,
       response.tokens.refreshToken
@@ -372,6 +385,13 @@ export const authAPI = {
       name,
       confirmPassword,
     });
+    
+    // Validate response structure
+    if (!response || !response.tokens || !response.tokens.accessToken) {
+      console.error('Invalid auth response structure:', response);
+      throw new APIError('INVALID_RESPONSE', 'Invalid authentication response from server');
+    }
+    
     TokenManager.setTokens(
       response.tokens.accessToken,
       response.tokens.refreshToken
@@ -407,7 +427,9 @@ export const documentsAPI = {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<{ documents: Document[]; pagination: any }> {
+  }): Promise<{
+    data: Document[]; documents: Document[]; pagination: any 
+}> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -453,7 +475,7 @@ export const documentsAPI = {
     return client.delete(`/documents/${id}`);
   },
 
-  async downloadDocument(id: string): Promise<Response> {
+  async downloadDocument(id: string): Promise<{ success: boolean; downloadUrl: string; filename: string }> {
     const token = TokenManager.getAccessToken();
     const response = await fetch(`${API_BASE_URL}/documents/${id}/download`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -463,7 +485,8 @@ export const documentsAPI = {
       throw new APIError('DOWNLOAD_FAILED', 'Failed to download document');
     }
     
-    return response;
+    const data = await response.json();
+    return data;
   },
 };
 

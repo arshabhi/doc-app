@@ -88,6 +88,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_SERVER_URL: http://localhost:9000
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
