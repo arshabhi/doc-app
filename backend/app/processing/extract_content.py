@@ -14,44 +14,58 @@ from openai import OpenAI
 qdrant = QdrantClient(host="localhost", port=6333)
 
 
-def extract_content(file):
+def extract_content(file, filename: str | None = None):
     """
-    Extracts content from a file (UploadFile or local path)
-    Returns {'extension': str, 'content': str|bytes}
+    Extracts content from:
+    - UploadFile
+    - bytes (memory buffer)
+    - local file path
+
+    Always extracts from a bytes buffer (no double-read).
     """
-    if hasattr(file, "filename"):  # FastAPI UploadFile
+
+    # -----------------
+    # Determine input type
+    # -----------------
+    if hasattr(file, "filename"):                 # UploadFile
         filename = file.filename
-        file_obj = file.file
-    elif isinstance(file, (str, Path)):  # Local path
+        file_bytes = file.file.read()             # BUT WE WILL NOT USE THIS IN UPLOAD ENDPOINT
+    elif isinstance(file, bytes):                 # Raw bytes (preferred path for upload)
+        file_bytes = file
+        if not filename:
+            raise ValueError("filename must be provided when passing raw bytes")
+    elif isinstance(file, (str, Path)):           # Local file
         filename = os.path.basename(file)
-        file_obj = open(file, "rb")
+        with open(file, "rb") as f:
+            file_bytes = f.read()
     else:
-        raise TypeError("file must be a path or UploadFile")
+        raise TypeError("file must be UploadFile, bytes, or a path")
 
     extension = Path(filename).suffix.lower().lstrip(".")
 
-    try:
-        if extension in {"txt", "csv", "log"}:
-            content = file_obj.read().decode("utf-8", errors="ignore")
+    # -----------------
+    # Extract content from bytes only
+    # -----------------
+    if extension in {"txt", "csv", "log"}:
+        content = file_bytes.decode("utf-8", errors="ignore")
 
-        elif extension == "json":
-            content = json.load(file_obj)
+    elif extension == "json":
+        content = json.loads(file_bytes)
 
-        elif extension == "pdf":
-            with fitz.open(stream=file_obj.read(), filetype="pdf") as doc:
-                content = "\n".join(page.get_text("text") for page in doc)
+    elif extension == "pdf":
+        with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+            content = "\n".join(page.get_text("text") for page in doc)
 
-        elif extension in {"jpg", "jpeg", "png"}:
-            content = file_obj.read()
+    elif extension in {"jpg", "jpeg", "png"}:
+        content = file_bytes
 
-        else:
-            content = file_obj.read()
+    else:
+        content = file_bytes
 
-    finally:
-        if not hasattr(file, "filename"):
-            file_obj.close()
-
-    return {"extension": extension, "content": content}
+    return {
+        "extension": extension,
+        "content": content,
+    }
 
 
 # def process_text_and_save_to_qdrant(content: str, collection_name: str = "documents", chunk_size: int = 500):

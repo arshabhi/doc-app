@@ -40,6 +40,19 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "Admin@123"  # ✅ Change for production!
     ADMIN_NAME: str = "System Admin"
 
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
+    # MinIO Credentials
+    MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "minio:9000")
+    MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+    MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+    MINIO_SECURE: bool = os.getenv("MINIO_SECURE", "false").lower() == "true"
+
+    MINIO_DOCUMENT_BUCKET: str = os.getenv("MINIO_DOCUMENT_BUCKET", "documents")
+    MINIO_SUMMARY_BUCKET: str = os.getenv("MINIO_SUMMARY_BUCKET", "summaries")
+    MINIO_COMPARISON_BUCKET: str = os.getenv("MINIO_COMPARISON_BUCKET", "comparisons")
+
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

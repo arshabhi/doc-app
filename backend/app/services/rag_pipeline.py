@@ -53,7 +53,7 @@ async def run_rag_pipeline(
     query_vector = await asyncio.to_thread(embedding_model.embed_query, user_message)
 
     # ✅ Step 4: Retrieve context chunks from Qdrant (filtered by owner_id)
-    qdrant_results = search_vectors(
+    qdrant_results = await search_vectors(
         query_vector=query_vector,
         filters={"owner_id": str(user_id), "document_id": str(document_id)},
         limit=5,

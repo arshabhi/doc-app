@@ -75,7 +75,24 @@ services:
     depends_on:
       - backend
 
+  # ==========================
+  # Blob — MinIO (local for S3)
+  # ==========================
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO Console UI
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
 
 volumes:
+  minio_data:
   postgres_data:
   qdrant_data:

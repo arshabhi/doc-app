@@ -8,13 +8,16 @@ import json
 from dotenv import load_dotenv
 
 from qdrant_client.http import models as qmodels
-from app.utils.qdrant import get_qdrant_client
+from app.utils.qdrant import async_qdrant, search_vectors
 from app.core.config import settings
 
-
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
+
+# ============================================================
+# Models
+# ============================================================
 
 class OrchestratorOutput(BaseModel):
     has_toc: bool
@@ -44,16 +47,12 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.2,
 )
 
+
 # ============================================================
 # LangGraph State
 # ============================================================
 
-
 class SummaryState(dict):
-    """
-    Workflow state passed between LangGraph nodes.
-    """
-
     user_id: str
     document_id: str
     raw_text: str | None
@@ -64,40 +63,36 @@ class SummaryState(dict):
 
 
 # ============================================================
-# Efficient Qdrant Scroll — Fetch First N Chunks (by chunk_index)
+# ASYNC – Efficient Qdrant Scroll (fetch first N chunks)
 # ============================================================
 
-
-async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
+async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=5):
     """
-    Retrieves the first N chunks (ordered by chunk_index) using Qdrant Scroll.
-    Fully compatible with Qdrant Python client which returns (points, next_page).
+    Fetches the first few chunks based on chunk_index for TOC detection.
     """
-
-    client = get_qdrant_client()
 
     filter_condition = qmodels.Filter(
         must=[
             qmodels.FieldCondition(key="owner_id", match=qmodels.MatchValue(value=str(user_id))),
-            qmodels.FieldCondition(
-                key="document_id", match=qmodels.MatchValue(value=str(document_id))
-            ),
+            qmodels.FieldCondition(key="document_id", match=qmodels.MatchValue(value=str(document_id))),
         ]
     )
 
     all_points = []
     next_page = None
 
-    # Scroll loop
+    # Async scroll loop
     while True:
-        points, next_page = client.scroll(
+        resp = await async_qdrant.scroll(
             collection_name=settings.QDRANT_COLLECTION_NAME,
             scroll_filter=filter_condition,
             limit=200,
             with_payload=True,
-            with_vectors=False,  # we only need metadata + text
+            with_vectors=False,
             offset=next_page,
         )
+
+        points, next_page = resp
 
         if points:
             all_points.extend(points)
@@ -105,35 +100,29 @@ async def fetch_first_chunks_from_qdrant(user_id, document_id, limit_chunks=3):
         if next_page is None:
             break
 
-    # Extract valid payloads
-    valid = [p.payload for p in all_points if "chunk_index" in p.payload and "text" in p.payload]
+    valid = [
+        p.payload
+        for p in all_points
+        if p.payload and "chunk_index" in p.payload and "text" in p.payload
+    ]
 
-    # Sort by chunk_index ascending
     ordered = sorted(valid, key=lambda x: x["chunk_index"])
-
-    # Take the first N chunks
     selected = ordered[:limit_chunks]
 
     return "\n\n".join([item["text"] for item in selected])
 
 
 # ============================================================
-# Agents
+# Agents (All Async)
 # ============================================================
 
-
 async def orchestrator_agent(state: SummaryState):
-    """
-    Determines whether document contains a TOC / Index.
-    """
     structured_llm = llm.with_structured_output(OrchestratorOutput)
+
     prompt = f"""
 You are an expert document analyzer.
 
-STRICT RULES:
-- Your ENTIRE reply must be ONLY valid JSON.
-- No markdown, no explanation, no commentary.
-- Format: {{"has_toc": true/false, "toc_sections": [ ... ]}}
+Reply ONLY in JSON.
 
 Analyze this document sample and determine if it contains a Table of Contents:
 
@@ -141,8 +130,7 @@ Document sample:
 {state["raw_text"][:5000]}
 """
 
-    result = await structured_llm.ainvoke(prompt)
-    # data = json.loads(result.content)
+    result: OrchestratorOutput = await structured_llm.ainvoke(prompt)
 
     state["has_toc"] = result.has_toc
     state["toc_sections"] = result.toc_sections
@@ -151,70 +139,53 @@ Document sample:
 
 
 async def toc_agent(state: SummaryState):
-    """
-    Selects important TOC sections.
-    """
     structured_llm = llm.with_structured_output(TocSelection)
+
     prompt = f"""
-Your job is to select the most important sections from this TOC
-for producing a global document summary.
+Select the most important TOC sections to summarize.
 
 TOC:
 {state["toc_sections"]}
-
-Return a JSON list of the most relevant section titles.
 """
 
-    result = await structured_llm.ainvoke(prompt)
-    # selected = json.loads(result.content)
-
+    result: TocSelection = await structured_llm.ainvoke(prompt)
     state["retrieved_chunks"] = result.sections
     return state
 
 
 async def qdrant_retrieval_agent(state: SummaryState):
     """
-    Semantic retrieval of chunks when no TOC is detected.
+    Semantic retrieval for non-TOC documents.
     """
 
     embedding_model = HuggingFaceEmbeddings(model_name=settings.HUGGINGFACE_EMBEDDING_MODEL)
 
     query_vector = await asyncio.to_thread(
-        embedding_model.embed_query, "main ideas of entire document"
+        embedding_model.embed_query,
+        "main ideas of entire document",
     )
 
-    from app.utils.qdrant import search_vectors
-
-    results = search_vectors(
+    results = await search_vectors(
         query_vector=query_vector,
-        filters={"owner_id": str(state["user_id"]), "document_id": str(state["document_id"])},
+        filters={
+            "owner_id": str(state["user_id"]),
+            "document_id": str(state["document_id"]),
+        },
         limit=5,
         mmr=True,
     )
 
-    chunks = [res["payload"].get("text", "") for res in results if res.get("payload")]
-    state["retrieved_chunks"] = chunks
+    state["retrieved_chunks"] = [r["payload"].get("text", "") for r in results]
     return state
 
 
 async def summarizer_agent(state: SummaryState):
-    """
-    Summarizes all retrieved content into unified summary.
-    """
     context_text = "\n\n".join(state["retrieved_chunks"])
 
     prompt = f"""
-You are a professional summarizer.
-Summarize the following document content into a unified, coherent summary.
+Summarize the following content into a unified structured summary:
 
-Content:
 {context_text}
-
-Provide a structured summary with:
-- Main themes
-- Key arguments
-- Important details
-- Final conclusions
 """
 
     result = await llm.ainvoke(prompt)
@@ -226,9 +197,8 @@ async def extract_key_points(summary_text: str) -> list[str]:
     structured_llm = llm.with_structured_output(KeyPointsOutput)
 
     prompt = f"""
-Extract 3-6 key bullet points from the summary below.
+Extract 3-6 key bullet points from this summary:
 
-Summary:
 {summary_text}
 """
 
@@ -271,21 +241,15 @@ graph = workflow.compile()
 
 
 # ============================================================
-# Final User-Facing Summary Function
+# Final Summary Function
 # ============================================================
 
-
 async def generate_summary(req, user_id, doc, custom=False):
-    """
-    Generates a structured summary using LangGraph workflow.
-    """
-
-    start_time = time.time()
+    start = time.time()
 
     # Fetch early content for TOC detection
     raw_text = await fetch_first_chunks_from_qdrant(user_id, doc.id, limit_chunks=5)
 
-    # Build initial workflow state
     initial_state = SummaryState(
         user_id=user_id,
         document_id=doc.id,
@@ -296,33 +260,22 @@ async def generate_summary(req, user_id, doc, custom=False):
         unified_summary=None,
     )
 
-    # Execute workflow
     result = await graph.ainvoke(initial_state)
 
     summary_text = result.get("unified_summary", "")
     chunks = result.get("retrieved_chunks", [])
 
-    # Extract chunk indices
-    source_chunks = []
-    for c in chunks:
-        if isinstance(c, dict) and "chunk_index" in c:
-            source_chunks.append(c["chunk_index"])
-
     key_points = await extract_key_points(summary_text)
 
-    # Final metadata
-    word_count = len(summary_text.split())
-    confidence = round(min(0.99, 0.75 + (len(chunks) * 0.03)), 2)
-    processing_time = round(time.time() - start_time, 2)
+    processing_time = round(time.time() - start, 2)
 
     return {
         "content": summary_text,
         "keyPoints": key_points,
-        "wordCount": word_count,
-        "confidence": confidence,
+        "wordCount": len(summary_text.split()),
+        "confidence": round(min(0.99, 0.75 + len(chunks) * 0.03), 2),
         "meta_data": {
             "model": "gemini-2.5-flash",
             "processingTime": processing_time,
-            "sourceChunks": source_chunks,
         },
     }
