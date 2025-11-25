@@ -9,9 +9,10 @@ import { FileText, AlertCircle } from 'lucide-react';
 
 interface LoginProps {
   onLoginSuccess: () => void;
+  onRegisterClick: () => void;
 }
 
-export function Login({ onLoginSuccess }: LoginProps) {
+export function Login({ onLoginSuccess, onRegisterClick }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -86,6 +87,16 @@ export function Login({ onLoginSuccess }: LoginProps) {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={onRegisterClick}
+                className="text-sm text-indigo-600 hover:text-indigo-800"
+              >
+                Don't have an account? Register here
+              </button>
+            </div>
           </form>
 
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">

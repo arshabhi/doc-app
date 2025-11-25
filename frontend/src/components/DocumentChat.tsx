@@ -3,8 +3,10 @@ import { useDocuments } from '../context/DocumentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Send, Bot, User, Trash2 } from 'lucide-react';
-import { ScrollArea } from './ui/scroll-area';
+import { Send, Bot, User, Trash2, Download } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 
 interface DocumentChatProps {
   documentId: string | null;
@@ -14,15 +16,13 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
   const { getDocument, chatMessages, sendMessage, clearChat } = useDocuments();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const document = documentId ? getDocument(documentId) : null;
-  const relevantMessages = chatMessages.filter(msg => msg.documentId === documentId);
+  const relevantMessages = documentId ? chatMessages.filter(msg => msg.documentId === documentId) : [];
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [relevantMessages]);
 
   const handleSend = async () => {
@@ -46,6 +46,42 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!documentId) return;
+    
+    try {
+      await clearChat(documentId);
+      toast.success('Chat history cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear chat:', error);
+      toast.error('Failed to clear chat history');
+    }
+  };
+
+  const handleExportChat = () => {
+    if (!document || relevantMessages.length === 0) return;
+
+    let content = `Chat Conversation\n\nDocument: ${document.name}\nExported: ${new Date().toLocaleString()}\n\n`;
+    content += '─'.repeat(60) + '\n\n';
+
+    relevantMessages.forEach((msg, index) => {
+      const role = msg.role === 'user' ? 'You' : 'AI Assistant';
+      const timestamp = new Date(msg.timestamp).toLocaleTimeString();
+      content += `[${timestamp}] ${role}:\n${msg.content}\n\n`;
+    });
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat_${document.name.replace(/\.[^/.]+$/, '')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Chat conversation exported successfully');
+  };
+
   if (!document) {
     return (
       <Card>
@@ -67,20 +103,28 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     <Card className="flex flex-col h-[600px]">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1 min-w-0">
             <CardTitle>Chat with Document</CardTitle>
-            <CardDescription className="mt-1">{document.name}</CardDescription>
+            <CardDescription className="mt-1 truncate">
+              {document.name}
+            </CardDescription>
           </div>
           {relevantMessages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={clearChat}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Chat
-            </Button>
+            <div className="flex gap-2 ml-4">
+              <Button variant="outline" size="sm" onClick={handleExportChat}>
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleClearChat}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Chat
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col min-h-0 p-0">
-        <ScrollArea className="flex-1 px-6" ref={scrollRef}>
+        <div className="flex-1 overflow-y-auto px-6">
           <div className="space-y-4 py-4">
             {relevantMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -112,7 +156,31 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({children}) => <p className="mb-2.5 last:mb-0">{children}</p>,
+                            h1: ({children}) => <h1 className="text-xs font-semibold mt-3 mb-2 first:mt-0 text-gray-900">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-xs font-semibold mt-2.5 mb-1.5 first:mt-0 text-gray-900">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-xs font-semibold mt-2 mb-1.5 first:mt-0 text-gray-800">{children}</h3>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-2.5 space-y-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-2.5 space-y-1">{children}</ol>,
+                            li: ({children}) => <li className="ml-2">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                            em: ({children}) => <em className="italic">{children}</em>,
+                            code: ({children}) => <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px] font-mono">{children}</code>,
+                            pre: ({children}) => <pre className="bg-gray-200 p-2 rounded text-[11px] font-mono overflow-x-auto mb-2.5">{children}</pre>,
+                            blockquote: ({children}) => <blockquote className="border-l-2 border-gray-400 pl-3 italic mb-2.5">{children}</blockquote>,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
+                    )}
                     <p
                       className={`text-xs mt-1 ${
                         msg.role === 'user' ? 'text-indigo-200' : 'text-gray-500'
@@ -129,8 +197,9 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                 </div>
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+        </div>
         <div className="border-t p-4 flex-shrink-0">
           <div className="flex gap-2">
             <Input

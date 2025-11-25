@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDocuments } from '../context/DocumentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { FileText, Trash2, Calendar, HardDrive, Loader2 } from 'lucide-react';
+import { Input } from './ui/input';
+import { FileText, Trash2, Calendar, HardDrive, Loader2, ZoomIn, ZoomOut, Download, Search, Filter, X } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,17 +18,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import { Separator } from './ui/separator';
 
 interface DocumentListProps {
   onSelectDocument: (id: string) => void;
   selectedDocumentId?: string;
 }
 
-export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentListProps) {
-  const { documents, deleteDocument, summarizeDocument } = useDocuments();
+export function DocumentList({ 
+  onSelectDocument, 
+  selectedDocumentId
+}: DocumentListProps) {
+  const { documents, deleteDocument, summarizeDocument, getDocument } = useDocuments();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [summarizingId, setSummarizingId] = useState<string | null>(null);
+  const [expandedDocumentId, setExpandedDocumentId] = useState<string | null>(null);
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'summarized' | 'unsummarized'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
 
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,20 +65,50 @@ export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentL
       toast.success('Document deleted successfully');
       setDocumentToDelete(null);
       setDeleteDialogOpen(false);
+      // Collapse if the deleted document was expanded
+      if (expandedDocumentId === documentToDelete) {
+        setExpandedDocumentId(null);
+      }
     }
   };
 
   const handleSummarize = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const doc = getDocument(id);
+    
+    // If already has summary, just expand/collapse
+    if (doc?.summary) {
+      setExpandedDocumentId(expandedDocumentId === id ? null : id);
+      return;
+    }
+    
+    // Otherwise, fetch the summary first
     setSummarizingId(id);
     try {
       await summarizeDocument(id);
       toast.success('Document summarized successfully');
+      setExpandedDocumentId(id);
     } catch (error) {
       toast.error('Failed to summarize document');
     } finally {
       setSummarizingId(null);
     }
+  };
+
+  const handleExportSummary = (doc: any) => {
+    if (!doc.summary) return;
+    
+    const content = `Document Summary\n\nDocument: ${doc.name}\nDate: ${formatDate(doc.uploadDate)}\nSize: ${formatFileSize(doc.size)}\n\n${doc.summary}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${doc.name.replace(/\.[^/.]+$/, '')}_summary.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Summary exported successfully');
   };
 
   const formatFileSize = (bytes: number) => {
@@ -68,6 +124,49 @@ export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentL
       day: 'numeric',
     });
   };
+
+  // Filter and sort documents
+  const filteredAndSortedDocuments = useMemo(() => {
+    let filtered = documents;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(doc => 
+        doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (filterStatus === 'summarized') {
+      filtered = filtered.filter(doc => doc.summary);
+    } else if (filterStatus === 'unsummarized') {
+      filtered = filtered.filter(doc => !doc.summary);
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'date':
+          return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
+        case 'size':
+          return b.size - a.size;
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [documents, searchQuery, filterStatus, sortBy]);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterStatus('all');
+    setSortBy('date');
+  };
+
+  const hasActiveFilters = searchQuery !== '' || filterStatus !== 'all' || sortBy !== 'date';
 
   if (documents.length === 0) {
     return (
@@ -89,67 +188,195 @@ export function DocumentList({ onSelectDocument, selectedDocumentId }: DocumentL
       <Card>
         <CardHeader>
           <CardTitle>Your Documents</CardTitle>
-          <CardDescription>{documents.length} document(s) uploaded</CardDescription>
+          <CardDescription>
+            {documents.length} document(s) uploaded
+          </CardDescription>
+          
+          {/* Search and Filter Controls */}
+          <div className="space-y-3 mt-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search documents..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="w-3 h-3 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Documents</SelectItem>
+                  <SelectItem value="summarized">Summarized</SelectItem>
+                  <SelectItem value="unsummarized">Not Summarized</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date (Newest)</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="size">Size (Largest)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filteredAndSortedDocuments.length === 0 && (
+              <div className="text-sm text-gray-500 text-center py-2">
+                No documents match your search criteria
+              </div>
+            )}
+          </div>
         </CardHeader>
+        
         <CardContent className="space-y-3">
-          {documents.map((doc) => (
+          {filteredAndSortedDocuments.map((doc) => (
             <div
               key={doc.id}
-              className={`p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${
+              className={`border rounded-lg transition-all ${
                 selectedDocumentId === doc.id ? 'border-indigo-600 bg-indigo-50' : ''
-              }`}
-              onClick={() => onSelectDocument(doc.id)}
+              } ${expandedDocumentId === doc.id ? 'shadow-md' : ''}`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <FileText className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate">{doc.name}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <HardDrive className="w-3 h-3" />
-                        {formatFileSize(doc.size)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(doc.uploadDate)}
-                      </span>
-                      {doc.summary && <Badge variant="secondary">Summarized</Badge>}
+              <div
+                className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                  expandedDocumentId === doc.id ? 'bg-gray-50' : ''
+                }`}
+                onClick={() => onSelectDocument(doc.id)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
+                    <FileText className="w-5 h-5 text-indigo-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="truncate cursor-help">{doc.name}</p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-md">
+                            <p className="break-all">{doc.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <HardDrive className="w-3 h-3" />
+                          {formatFileSize(doc.size)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(doc.uploadDate)}
+                        </span>
+                        {doc.summary && <Badge variant="secondary">Summarized</Badge>}
+                      </div>
                     </div>
-                    {doc.summary && (
-                      <p className="mt-2 text-xs text-gray-600 line-clamp-2">
-                        {doc.summary}
-                      </p>
-                    )}
                   </div>
-                </div>
-                <div className="flex items-center space-x-2 ml-4">
-                  {!doc.summary && (
+                  <div className="flex items-center space-x-2 ml-4">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={(e) => handleSummarize(doc.id, e)}
                       disabled={summarizingId === doc.id}
+                      title={doc.summary ? (expandedDocumentId === doc.id ? 'Collapse summary' : 'View summary') : 'Generate summary'}
                     >
                       {summarizingId === doc.id ? (
                         <>
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
                           Summarizing...
                         </>
+                      ) : doc.summary ? (
+                        expandedDocumentId === doc.id ? (
+                          <>
+                            <ZoomOut className="w-3 h-3 mr-1" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ZoomIn className="w-3 h-3 mr-1" />
+                            View Summary
+                          </>
+                        )
                       ) : (
                         'Summarize'
                       )}
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => handleDeleteClick(doc.id, e)}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDeleteClick(doc.id, e)}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
               </div>
+
+              {/* Expanded Summary View */}
+              {expandedDocumentId === doc.id && doc.summary && (
+                <div className="border-t bg-gray-50">
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs text-gray-600 uppercase tracking-wide">Document Summary</h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleExportSummary(doc);
+                        }}
+                        className="flex items-center gap-1 h-7"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span className="text-xs">Export</span>
+                      </Button>
+                    </div>
+                    <Separator />
+                    <div className="max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                      <div className="text-xs text-gray-700 leading-relaxed">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({children}) => <p className="mb-2.5 last:mb-0">{children}</p>,
+                            h1: ({children}) => <h1 className="text-xs font-semibold mt-3 mb-2 first:mt-0 text-gray-900">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-xs font-semibold mt-2.5 mb-1.5 first:mt-0 text-gray-900">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-xs font-semibold mt-2 mb-1.5 first:mt-0 text-gray-800">{children}</h3>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-2.5 space-y-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-2.5 space-y-1">{children}</ol>,
+                            li: ({children}) => <li className="ml-2">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                            em: ({children}) => <em className="italic">{children}</em>,
+                            code: ({children}) => <code className="bg-gray-200 px-1.5 py-0.5 rounded text-[11px] font-mono">{children}</code>,
+                            pre: ({children}) => <pre className="bg-gray-200 p-2 rounded text-[11px] font-mono overflow-x-auto mb-2.5">{children}</pre>,
+                            blockquote: ({children}) => <blockquote className="border-l-2 border-gray-300 pl-3 italic mb-2.5">{children}</blockquote>,
+                          }}
+                        >
+                          {doc.summary}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </CardContent>

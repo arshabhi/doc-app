@@ -32,6 +32,46 @@ A comprehensive AI-powered document management application with authentication, 
 ### Prerequisites
 - Node.js 20 or higher
 - Docker and Docker Compose (for containerized deployment)
+- Python 3.11.9+ (for backend)
+- PostgreSQL 13+ (or use Docker)
+
+### Quick Start
+
+⚠️ **Important**: This application requires both frontend and backend to run.
+
+1. **Start the Backend** (see [BACKEND-SETUP.md](./BACKEND-SETUP.md) for details):
+```bash
+# Start PostgreSQL
+docker-compose up -d postgres
+
+# Start the backend API
+cd backend
+python main.py
+```
+
+2. **Start the Frontend**:
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+3. Open your browser and navigate to `http://localhost:5173`
+
+### Troubleshooting
+
+If you see "Failed to connect to the server" error:
+
+1. **Verify backend is running**:
+   ```bash
+   curl http://localhost:8000/health
+   ```
+
+2. **Check the browser console** (F12) for diagnostic information
+
+3. **See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** for detailed troubleshooting steps
 
 ### Development Setup
 
@@ -40,12 +80,16 @@ A comprehensive AI-powered document management application with authentication, 
 npm install
 ```
 
-2. Start the development server:
+2. Environment variables are pre-configured in `.env`:
+   - No configuration needed for development
+   - See [ENVIRONMENT-SETUP.md](./ENVIRONMENT-SETUP.md) for customization
+
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-3. Open your browser and navigate to `http://localhost:5173`
+4. Open your browser and navigate to `http://localhost:5173`
 
 ### Docker Deployment
 
@@ -99,8 +143,15 @@ The application comes with demo users for testing:
 ├── context/
 │   ├── AuthContext.tsx        # Authentication state
 │   └── DocumentContext.tsx    # Document management state
+├── services/
+│   ├── api.ts                 # API service layer
+│   └── healthCheck.ts         # Backend health monitoring
+├── config/
+│   └── environment.ts         # Environment configuration
 ├── styles/
 │   └── globals.css            # Global styles
+├── .env                       # Environment variables
+├── .env.example               # Environment template
 ├── App.tsx                    # Main application component
 ├── Dockerfile                 # Docker configuration
 ├── docker-compose.yml         # Docker Compose configuration
@@ -135,16 +186,39 @@ The application comes with demo users for testing:
 - Document usage analytics
 - Storage monitoring
 
-## Note
+## Backend Integration
 
-This is a frontend demonstration application with mock data and simulated AI responses. In a production environment, you would need to:
+This application is designed to work with a FastAPI backend running on `localhost:8000`. The frontend communicates with the backend through:
 
-1. Connect to a real authentication service
-2. Implement actual file storage (e.g., AWS S3, Azure Blob Storage)
-3. Integrate with AI services for document processing (e.g., OpenAI, Claude)
-4. Set up a backend API for data persistence
-5. Implement proper security measures
-6. Add environment-specific configurations
+- **Authentication**: JWT-based authentication with refresh tokens
+- **Document Management**: File upload, download, and metadata management
+- **AI Features**: Chat, comparison, and summarization via backend AI services
+- **Admin Operations**: User management and system analytics
+
+### API Documentation
+
+- See [API-INTEGRATION.md](./API-INTEGRATION.md) for API details
+- Backend API docs available at: `http://localhost:8000/docs` (when running)
+
+## Documentation
+
+- 📚 [STARTUP-GUIDE.md](./STARTUP-GUIDE.md) - Step-by-step startup instructions
+- 🔧 [ENVIRONMENT-SETUP.md](./ENVIRONMENT-SETUP.md) - Environment configuration guide
+- 🔍 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and solutions
+- 🚀 [QUICK-START.md](./QUICK-START.md) - Quick start guide
+- 📡 [API-INTEGRATION.md](./API-INTEGRATION.md) - API integration details
+- 🐛 [FIXED-CONNECTION-ERROR.md](./FIXED-CONNECTION-ERROR.md) - Recent fixes
+
+## Production Deployment
+
+For production deployment:
+
+1. Set `VITE_API_BASE_URL` to your production backend URL
+2. Configure CORS on the backend to allow your frontend domain
+3. Set up proper SSL/TLS certificates
+4. Configure environment variables for security
+5. Set up proper logging and monitoring
+6. Implement rate limiting and security measures
 
 ## License
 

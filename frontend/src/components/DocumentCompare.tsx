@@ -1,56 +1,90 @@
-import React, { useState } from 'react';
-import { useDocuments } from '../context/DocumentContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { FileText, ArrowLeftRight, Loader2 } from 'lucide-react';
-import { Badge } from './ui/badge';
+import React, { useState } from "react";
+import { useDocuments } from "../context/DocumentContext";
+import { compareAPI, Comparison } from "../services/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
+  FileText,
+  ArrowLeftRight,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { Badge } from "./ui/badge";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Progress } from "./ui/progress";
 
 export function DocumentCompare() {
   const { documents } = useDocuments();
-  const [doc1Id, setDoc1Id] = useState<string>('');
-  const [doc2Id, setDoc2Id] = useState<string>('');
+  const [doc1Id, setDoc1Id] = useState<string>("");
+  const [doc2Id, setDoc2Id] = useState<string>("");
   const [comparing, setComparing] = useState(false);
-  const [comparison, setComparison] = useState<string | null>(null);
+  const [comparison, setComparison] =
+    useState<Comparison | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCompare = async () => {
     if (!doc1Id || !doc2Id) return;
 
     setComparing(true);
-    // Mock comparison delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    setError(null);
+    setComparison(null);
 
-    const doc1 = documents.find(d => d.id === doc1Id);
-    const doc2 = documents.find(d => d.id === doc2Id);
+    try {
+      const result = await compareAPI.compareDocuments(
+        doc1Id,
+        doc2Id,
+        {
+          comparisonType: "full",
+          highlightChanges: true,
+        },
+      );
 
-    const mockComparison = `
-**Comparison Results:**
+      setComparison(result.comparison);
+    } catch (err: any) {
+      console.error("Failed to compare documents:", err);
+      setError(err.message || "Failed to compare documents");
+    } finally {
+      setComparing(false);
+    }
+  };
 
-**Document 1:** ${doc1?.name}
-**Document 2:** ${doc2?.name}
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024)
+      return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
 
-**Key Differences:**
-- Document 1 focuses on ${doc1?.name.includes('Research') ? 'research methodologies' : 'business strategies'}
-- Document 2 emphasizes ${doc2?.name.includes('Research') ? 'research methodologies' : 'business strategies'}
-
-**Similarities:**
-- Both documents discuss technology and innovation
-- Similar document structure and formatting
-- Comparable length and complexity
-
-**Content Analysis:**
-- Document 1 has a more ${Math.random() > 0.5 ? 'technical' : 'general'} approach
-- Document 2 provides ${Math.random() > 0.5 ? 'more detailed examples' : 'broader overview'}
-
-**Recommendations:**
-- Use Document 1 for ${doc1?.name.split('.')[0].toLowerCase()} purposes
-- Use Document 2 for ${doc2?.name.split('.')[0].toLowerCase()} purposes
-
-[This is a mock comparison. A real implementation would use AI to analyze and compare the actual document contents.]
-    `;
-
-    setComparison(mockComparison);
-    setComparing(false);
+  const truncateFilename = (
+    filename: string,
+    maxLength: number = 25,
+  ) => {
+    if (filename.length <= maxLength) return filename;
+    const extension = filename.substring(
+      filename.lastIndexOf("."),
+    );
+    const nameWithoutExt = filename.substring(
+      0,
+      filename.lastIndexOf("."),
+    );
+    const truncatedName = nameWithoutExt.substring(
+      0,
+      maxLength - extension.length - 3,
+    );
+    return `${truncatedName}...${extension}`;
   };
 
   return (
@@ -58,7 +92,8 @@ export function DocumentCompare() {
       <CardHeader>
         <CardTitle>Compare Documents</CardTitle>
         <CardDescription>
-          Select two documents to compare their content and find similarities or differences
+          Select two documents to compare their content and find
+          similarities or differences
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -71,10 +106,16 @@ export function DocumentCompare() {
               </SelectTrigger>
               <SelectContent>
                 {documents.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id} disabled={doc.id === doc2Id}>
+                  <SelectItem
+                    key={doc.id}
+                    value={doc.id}
+                    disabled={doc.id === doc2Id}
+                  >
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      {doc.name}
+                      <span className="truncate">
+                        {truncateFilename(doc.name)}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -90,10 +131,16 @@ export function DocumentCompare() {
               </SelectTrigger>
               <SelectContent>
                 {documents.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id} disabled={doc.id === doc1Id}>
+                  <SelectItem
+                    key={doc.id}
+                    value={doc.id}
+                    disabled={doc.id === doc1Id}
+                  >
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      {doc.name}
+                      <span className="truncate">
+                        {truncateFilename(doc.name)}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -120,28 +167,168 @@ export function DocumentCompare() {
           )}
         </Button>
 
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {comparison && (
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge>Comparison Results</Badge>
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg">Comparison Results</h3>
+              <Badge
+                variant={
+                  comparison.status === "completed"
+                    ? "default"
+                    : "secondary"
+                }
+              >
+                {comparison.status}
+              </Badge>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg border">
-              <pre className="text-sm whitespace-pre-wrap">{comparison}</pre>
-            </div>
+
+            {comparison.summary && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl text-green-700">
+                    {comparison.summary.additions}
+                  </div>
+                  <div className="text-sm text-green-600">
+                    Additions
+                  </div>
+                </div>
+                <div className="p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl text-red-700">
+                    {comparison.summary.deletions}
+                  </div>
+                  <div className="text-sm text-red-600">
+                    Deletions
+                  </div>
+                </div>
+                <div className="p-4 bg-yellow-50 rounded-lg">
+                  <div className="text-2xl text-yellow-700">
+                    {comparison.summary.modifications}
+                  </div>
+                  <div className="text-sm text-yellow-600">
+                    Modifications
+                  </div>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl text-blue-700">
+                    {comparison.summary.totalChanges}
+                  </div>
+                  <div className="text-sm text-blue-600">
+                    Total Changes
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {comparison.summary && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Similarity Score</span>
+                  <span>
+                    {(
+                      comparison.summary.similarityScore * 100
+                    ).toFixed(1)}
+                    %
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    comparison.summary.similarityScore * 100
+                  }
+                />
+              </div>
+            )}
+
+            {comparison.changes &&
+              comparison.changes.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm">Key Changes:</h4>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {comparison.changes
+                      .slice(0, 10)
+                      .map((change: any) => (
+                        <div
+                          key={change.id}
+                          className="p-3 border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge
+                                  variant={
+                                    change.type === "addition"
+                                      ? "default"
+                                      : change.type ===
+                                          "deletion"
+                                        ? "destructive"
+                                        : "secondary"
+                                  }
+                                >
+                                  {change.type}
+                                </Badge>
+                                {change.severity && (
+                                  <Badge variant="outline">
+                                    {change.severity}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700">
+                                {change.content}
+                              </p>
+                              {change.location && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Page {change.location.page} -{" "}
+                                  {change.location.section}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+            {comparison.diffUrl && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    window.open(comparison.diffUrl, "_blank")
+                  }
+                >
+                  View Diff Document
+                </Button>
+                {comparison.sideBySideUrl && (
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      window.open(
+                        comparison.sideBySideUrl,
+                        "_blank",
+                      )
+                    }
+                  >
+                    View Side-by-Side
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {!comparison && !comparing && documents.length >= 2 && (
+        {!comparison && !comparing && doc1Id && doc2Id && (
           <div className="text-center py-8 text-gray-500">
             <ArrowLeftRight className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>Select two documents to start comparing</p>
-          </div>
-        )}
-
-        {documents.length < 2 && (
-          <div className="text-center py-8 text-gray-500">
-            <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>You need at least 2 documents to use comparison</p>
+            <p>
+              Click "Compare Documents" to analyze differences
+            </p>
           </div>
         )}
       </CardContent>
