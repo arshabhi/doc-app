@@ -13,7 +13,7 @@ from datetime import datetime
 class ChatRequest(BaseModel):
     session_id: Optional[UUID] = Field(None, alias="conversationId")
     message: str
-    document_id: Optional[UUID] = Field(None, alias="documentId")
+    document_id: Optional[UUID]
 
 
 class ChatResponse(BaseModel):
