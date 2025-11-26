@@ -30,7 +30,9 @@ export interface ChatMessage {
   timestamp: Date;
   confidence?: number;
   sources?: Array<{
-    pageNumber: number;
+    document: string;
+    page: number;
+    pageNumber?: number;
     excerpt: string;
     relevance: number;
   }>;
@@ -94,22 +96,19 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
   const refreshDocuments = async (): Promise<void> => {
     try {
       setLoading(true);
-
-      // Backend returns simple array due to unwrapping logic in APIClient
-      const docs = await documentsAPI.getDocuments({ limit: 100 });
-
-      console.log("Documents (raw):", docs);
-
-      const normalized = Array.isArray(docs)
-        ? docs
-        : docs?.data || docs?.documents || [];
-
-      const converted = normalized.map(convertAPIDocument);
-
-      setDocuments(converted);
-
+      const response = await documentsAPI.getDocuments({ limit: 100 });
+      console.log('Documents API response:', response);
+      
+      if (response && Array.isArray(response.documents)) {
+        const convertedDocuments = response.documents.map(convertAPIDocument);
+        console.log('Converted documents:', convertedDocuments);
+        setDocuments(convertedDocuments);
+      } else {
+        console.error('Invalid documents response:', response);
+        setDocuments([]);
+      }
     } catch (error) {
-      console.error("Failed to fetch documents:", error);
+      console.error('Failed to fetch documents:', error);
       setDocuments([]);
     } finally {
       setLoading(false);

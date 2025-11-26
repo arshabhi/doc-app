@@ -280,7 +280,9 @@ export interface ChatMessage {
   timestamp: string;
   confidence?: number;
   sources?: Array<{
-    pageNumber: number;
+    document: string;
+    page: number;
+    pageNumber?: number;
     excerpt: string;
     relevance: number;
   }>;
@@ -427,9 +429,7 @@ export const documentsAPI = {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<{
-    data: Document[]; documents: Document[]; pagination: any 
-}> {
+  }): Promise<{ documents: Document[]; pagination: any }> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());

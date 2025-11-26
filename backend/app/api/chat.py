@@ -68,16 +68,6 @@ async def chat_query(
         tokens_used = len(request.message.split()) + len(llm_output.split())
         processing_time = round(time.time() - start_time, 2)
 
-        # Format sources
-        formatted_sources = [
-            {
-                "pageNumber": idx + 1,
-                "excerpt": src.get("excerpt", ""),
-                "relevance": round(0.95 - (idx * 0.05), 2),
-            }
-            for idx, src in enumerate(sources[:3])
-        ]
-
         # ✅ Return in frontend-compatible format
         return {
             "success": True,
@@ -88,7 +78,7 @@ async def chat_query(
                 "query": request.message,
                 "content": llm_output.strip(),
                 "confidence": confidence,
-                "sources": formatted_sources,
+                "sources": sources,
                 "timestamp": datetime.utcnow().isoformat() + "Z",
                 "metadata": {
                     "model": "gemini-2.5-flash",

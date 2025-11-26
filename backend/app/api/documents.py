@@ -43,16 +43,13 @@ async def upload_document(
 
         # Extract content from bytes (not UploadFile)
         extracted = extract_content(file_bytes, filename=file.filename)
-        extracted_text = extracted.get("content", "")
-        if isinstance(extracted_text, bytes):  # e.g., images
-            extracted_text = ""
 
         # Store in DB
         doc = await process_and_store_document(
             db=db,
             owner_id=current_user.id,
             filename=file.filename,
-            content=extracted_text,
+            content=extracted,
             content_type=file.content_type,   
             size=len(file_bytes),
             metadata={"minio_uri": minio_uri},
