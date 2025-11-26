@@ -488,6 +488,21 @@ export const documentsAPI = {
     const data = await response.json();
     return data;
   },
+
+  async getPageImage(id: string, page: number): Promise<string> {
+    const token = TokenManager.getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/documents/${id}/page/${page}/image`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    
+    if (!response.ok) {
+      throw new APIError('PAGE_IMAGE_FAILED', 'Failed to fetch page image');
+    }
+    
+    // Convert image response to blob and create object URL
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  },
 };
 
 // Chat API

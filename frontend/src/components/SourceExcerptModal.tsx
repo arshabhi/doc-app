@@ -1,6 +1,7 @@
-import React from 'react';
-import { X, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, FileText, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
+import { documentsAPI } from '../services/api';
 
 interface SourceExcerptModalProps {
   isOpen: boolean;
@@ -11,9 +12,45 @@ interface SourceExcerptModalProps {
     excerpt: string;
     relevance: number;
   } | null;
+  documentId: string | null;
 }
 
-export function SourceExcerptModal({ isOpen, onClose, source }: SourceExcerptModalProps) {
+export function SourceExcerptModal({ isOpen, onClose, source, documentId }: SourceExcerptModalProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !source || !documentId) {
+      setImageUrl(null);
+      setError(null);
+      return;
+    }
+
+    const fetchPageImage = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const url = await documentsAPI.getPageImage(documentId, source.page);
+        setImageUrl(url);
+      } catch (err) {
+        console.error('Failed to fetch page image:', err);
+        setError('Failed to load page image');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPageImage();
+
+    // Cleanup: revoke object URL when component unmounts or source changes
+    return () => {
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
+  }, [isOpen, source, documentId]);
+
   if (!isOpen || !source) return null;
 
   return (
@@ -53,25 +90,40 @@ export function SourceExcerptModal({ isOpen, onClose, source }: SourceExcerptMod
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {source.excerpt}
-            </p>
-          </div>
-          
-          {/* Relevance indicator */}
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm text-gray-600">Relevance:</span>
-            <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
-              <div 
-                className="bg-indigo-600 h-2 rounded-full transition-all"
-                style={{ width: `${source.relevance * 100}%` }}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+              <span className="ml-3 text-gray-600">Loading page image...</span>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          ) : imageUrl ? (
+            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+              <img 
+                src={imageUrl} 
+                alt={`Page ${source.page}`}
+                className="w-full h-auto"
               />
             </div>
-            <span className="text-sm text-gray-700">
-              {Math.round(source.relevance * 100)}%
-            </span>
-          </div>
+          ) : null}
+          
+          {/* Relevance indicator */}
+          {!loading && !error && (
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-sm text-gray-600">Relevance:</span>
+              <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
+                <div 
+                  className="bg-indigo-600 h-2 rounded-full transition-all"
+                  style={{ width: `${source.relevance * 100}%` }}
+                />
+              </div>
+              <span className="text-sm text-gray-700">
+                {Math.round(source.relevance * 100)}%
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

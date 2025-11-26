@@ -286,6 +286,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         source={selectedSource}
+        documentId={documentId}
       />
     </Card>
   );

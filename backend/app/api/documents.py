@@ -1,4 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, Response, UploadFile, File, Depends, HTTPException
+import fitz
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -187,3 +188,60 @@ async def download_document(
         "downloadUrl": url,
         "filename": doc.filename,
     }
+
+
+# ===========================
+# GET /{id}/page/{page}/image
+# ===========================
+@router.get("/{id}/page/{page}/image")
+async def get_pdf_page_image(
+    id: UUID,
+    page: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Returns a PDF page as an image (PNG). Useful for citation previews or rendering pages.
+    """
+
+    # 1️⃣ Validate document
+    doc = await doc_crud.get_document_by_id(db, id)
+    if not doc or doc.owner_id != current_user.id:
+        raise HTTPException(404, "Document not found")
+
+    if doc.content_type not in ("application/pdf", "pdf"):
+        raise HTTPException(400, "Document is not a PDF")
+
+    # 2️⃣ Get MinIO reference
+    minio_uri = (doc.meta_data or {}).get("minio_uri")
+    if not minio_uri:
+        raise HTTPException(400, "Document storage reference missing")
+
+    bucket, object_name = minio_uri.split("/", 1)
+
+    # 3️⃣ Download file bytes from MinIO
+    # pdf_bytes = await async_minio.get_object_bytes(bucket, object_name)
+    pdf_bytes = await async_minio.download_bytes(bucket, object_name)
+
+    if not pdf_bytes:
+        raise HTTPException(500, "Failed retrieving document from storage")
+
+    # 4️⃣ Open and render specific page
+    try:
+        pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+        # Fix page indexing (API expects 1-based, PyMuPDF uses 0-based)
+        page_index = page - 1
+
+        if page_index < 0 or page_index >= len(pdf):
+            raise HTTPException(400, f"Page {page} out of range. PDF has {len(pdf)} pages.")
+
+        page_obj = pdf[page_index]
+        pix = page_obj.get_pixmap(dpi=150)  # good quality
+
+        img_bytes = pix.tobytes("png")
+
+        return Response(content=img_bytes, media_type="image/png")
+
+    except Exception as e:
+        raise HTTPException(500, f"Failed to render page: {e}")
