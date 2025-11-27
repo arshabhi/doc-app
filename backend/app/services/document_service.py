@@ -4,98 +4,93 @@ import uuid
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import Document
-from qdrant_client import QdrantClient
-from qdrant_client.http import models as qmodels
 
-# from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.config import settings
 import asyncio
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from app.utils.qdrant import upsert_vectors
 
+from app.utils.qdrant import upsert_vectors  # ensure this is async or threaded!
 
 async def process_and_store_document(
     db: AsyncSession,
     owner_id: uuid.UUID,
     filename: str,
-    content: str,
+    content_type: str,
+    content: dict,
     size: int,
     metadata: dict = None,
 ):
     """
-    Processes an uploaded document:
-      1. Stores metadata in the database.
-      2. Splits and embeds content using SentenceTransformer (MiniLM).
-      3. Stores embeddings + metadata into Qdrant.
-    """
+    1. Store doc metadata in DB
+    2. Split + embed content
+    3. Store embeddings in Qdrant
 
-    if not content or not content.strip():
-        raise ValueError("❌ Empty document content — cannot process.")
+    Expects `content` structure like:
+    {
+        "extension": "pdf",
+        "pages": [
+            {"page": 1, "content": "..."},
+            {"page": 2, "content": "..."}
+        ]
+    }
+    """
+    # Validate structure
+    if not content or "pages" not in content or len(content["pages"]) == 0:
+        raise ValueError("❌ Cannot process: structured content is empty or invalid.")
 
     metadata = metadata or {}
 
-    # 1️⃣ Store document record in DB
+    # 1️⃣ Store document metadata & structured content (FULL JSON preserved)
     doc = Document(
         owner_id=uuid.UUID(str(owner_id)),
         filename=filename,
-        meta_data={"text": content.strip(), **metadata},
+        content_type=content_type,
         uploaded_at=datetime.utcnow(),
         size=size,
+        meta_data={"structure": content, **metadata},  # keep structured JSON
     )
 
     db.add(doc)
     await db.commit()
     await db.refresh(doc)
 
-    # 2️⃣ Initialize SentenceTransformer embeddings
+    # 2️⃣ Prepare embeddings
     embedding_model = HuggingFaceEmbeddings(model_name=settings.HUGGINGFACE_EMBEDDING_MODEL)
 
-    # Split into manageable chunks
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = splitter.split_text(content.strip())
 
-    # Compute embeddings asynchronously (offload to thread pool)
-    vectors = await asyncio.to_thread(embedding_model.embed_documents, chunks)
+    # Instead of splitting whole document blindly, split page-by-page
+    chunks = []
+    for page in content["pages"]:
+        page_text = page["content"].strip()
+        if not page_text:
+            continue
 
+        page_chunks = splitter.split_text(page_text)
+
+        for chunk in page_chunks:
+            chunks.append({"page": page["page"], "content": chunk})
+
+    # 3️⃣ Compute embeddings
+    vectors = await asyncio.to_thread(
+        embedding_model.embed_documents, 
+        [c["content"] for c in chunks]
+    )
+
+    # 4️⃣ Insert into Qdrant with page awareness
     payloads = [
         {
             "document_id": str(doc.id),
             "owner_id": str(owner_id),
             "chunk_index": idx,
+            "page": chunk["page"],
             "filename": filename,
-            "text": chunk,
+            "text": chunk["content"],
         }
         for idx, chunk in enumerate(chunks)
     ]
 
-    upsert_vectors(vectors=vectors, payloads=payloads)
-
-    # 3️⃣ Push to Qdrant
-    # qclient = QdrantClient(url=settings.QDRANT_URL)
-
-    # points = [
-    #     qmodels.PointStruct(
-    #         id=str(uuid.uuid4()),
-    #         vector=vector,
-    #         payload={
-    #             "document_id": str(doc.id),
-    #             "owner_id": str(owner_id),
-    #             "chunk_index": idx,
-    #             "filename": filename,
-    #             "text": chunk,
-    #         },
-    #     )
-    #     for idx, (chunk, vector) in enumerate(zip(chunks, vectors))
-    # ]
-
-    # # Run Qdrant upsert off the main event loop
-    # await asyncio.to_thread(
-    #     qclient.upsert,
-    #     collection_name=settings.QDRANT_COLLECTION_NAME,
-    #     points=points,
-    # )
-
-    # print(f"📄 Stored {len(chunks)} chunks from '{filename}' into Qdrant.")
+    await upsert_vectors(vectors=vectors, payloads=payloads)
 
     return doc

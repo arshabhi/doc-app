@@ -3,10 +3,11 @@ import { useDocuments } from '../context/DocumentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Send, Bot, User, Trash2, Download } from 'lucide-react';
+import { Send, Bot, User, Trash2, Download, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
+import { SourceExcerptModal } from './SourceExcerptModal';
 
 interface DocumentChatProps {
   documentId: string | null;
@@ -16,6 +17,13 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
   const { getDocument, chatMessages, sendMessage, clearChat } = useDocuments();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<{
+    document: string;
+    page: number;
+    excerpt: string;
+    relevance: number;
+  } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const document = documentId ? getDocument(documentId) : null;
@@ -66,7 +74,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
 
     relevantMessages.forEach((msg, index) => {
       const role = msg.role === 'user' ? 'You' : 'AI Assistant';
-      const timestamp = new Date(msg.timestamp).toLocaleTimeString();
+      const timestamp = new Date(msg.timestamp).toLocaleString();
       content += `[${timestamp}] ${role}:\n${msg.content}\n\n`;
     });
 
@@ -80,6 +88,36 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success('Chat conversation exported successfully');
+  };
+
+  const handleSourceClick = (source: {
+    document: string;
+    page: number;
+    excerpt: string;
+    relevance: number;
+  }) => {
+    setSelectedSource(source);
+    setIsModalOpen(true);
+  };
+
+  const formatTimestamp = (date: Date) => {
+    const now = new Date();
+    const msgDate = new Date(date);
+    const isToday = msgDate.toDateString() === now.toDateString();
+    const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === msgDate.toDateString();
+    
+    if (isToday) {
+      return `Today at ${msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (isYesterday) {
+      return `Yesterday at ${msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      return msgDate.toLocaleString([], { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
   };
 
   if (!document) {
@@ -177,6 +215,33 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                         >
                           {msg.content}
                         </ReactMarkdown>
+                        
+                        {/* Sources */}
+                        {msg.sources && msg.sources.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-600 mb-2">Sources:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {msg.sources.map((source, index) => {
+                                const pageNum = source.page || source.pageNumber;
+                                return (
+                                  <button
+                                    key={index}
+                                    onClick={() => handleSourceClick({
+                                      document: source.document,
+                                      page: pageNum || 0,
+                                      excerpt: source.excerpt,
+                                      relevance: source.relevance,
+                                    })}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] transition-colors"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    Page {pageNum}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
@@ -186,7 +251,7 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
                         msg.role === 'user' ? 'text-indigo-200' : 'text-gray-500'
                       }`}
                     >
-                      {new Date(msg.timestamp).toLocaleTimeString()}
+                      {formatTimestamp(new Date(msg.timestamp))}
                     </p>
                   </div>
                   {msg.role === 'user' && (
@@ -215,6 +280,14 @@ export function DocumentChat({ documentId }: DocumentChatProps) {
           </div>
         </div>
       </CardContent>
+      
+      {/* Source Excerpt Modal */}
+      <SourceExcerptModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        source={selectedSource}
+        documentId={documentId}
+      />
     </Card>
   );
 }

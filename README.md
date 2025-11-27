@@ -16,6 +16,7 @@ The system includes a FastAPI backend, a React (Vite) frontend, and PostgreSQL +
 - Generate summaries (multi-style, multi-length)
 - Chat over selected document
 - Compare two documents (structure, content, metadata, full diff)
+- Download documents
 
 ## Chat & RAG
 
@@ -35,6 +36,12 @@ The system includes a FastAPI backend, a React (Vite) frontend, and PostgreSQL +
 - PostgreSQL for users, documents, chat & summaries
 - Qdrant vector DB for high-performance semantic search
 - Dockerized for production deployment
+- MinIO for Raw blob storage
+
+## Summarization Architecture
+The following diagram provides how the summary is generated, based on the document.
+![alt text](assets/summarizer-workflow.png "Workflow of the Summarizer module")
+
 
 ## 🏗️ Tech Stack
 ### Frontend
@@ -102,10 +109,11 @@ Services started:
 - backend → http://localhost:8000
 - postgres → http://localhost:5432
 - qdrant → http://localhost:6333
+- MinIO console → http://localhost:9001
 
-### 2. Stop & remove all containers
+### 2. Stop & remove all containers and volumes
 ```
-docker compose down
+docker compose down -v
 ```
 
 ### 3. Rebuild without cache
@@ -135,7 +143,7 @@ npm run dev
 Frontend runs at:
 👉 `http://localhost:5173`
 
-## 🗃️ Run Postgres + Qdrant (locally only)
+## 🗃️ Run Postgres + Qdrant + MinIO (locally only)
 
 If you want only DBs without frontend/backend:
 
@@ -179,6 +187,7 @@ Doc-App uses:
 - Update metadata
 - Summaries
 - Comparison
+- Get page image
 
 ### Chat
 - Query
@@ -190,14 +199,14 @@ Doc-App uses:
 - Documents
 - Analytics
 - Activity
-- Broadcast messages
+
 
 Full API documentation is available at:
 👉 ```/docs``` (Swagger UI)
 
 ## Upcoming Features and Enhancements
 - Support for multiple doc types (images)
-- Document Extraction pipeline
+- Document Extraction pipeline for PDF/images
 - Download option in pdf/doc format
 - Compare Document API
 - Selection of embeddings and models

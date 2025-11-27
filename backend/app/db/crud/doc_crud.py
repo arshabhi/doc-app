@@ -17,7 +17,12 @@ async def get_document_by_id(db: AsyncSession, doc_id: UUID):
 
 
 async def update_document_metadata(db: AsyncSession, doc_id: UUID, metadata: dict):
-    q = update(Document).where(Document.id == doc_id).values(meta_data=metadata).returning(Document)
+    q = (
+        update(Document)
+        .where(Document.id == doc_id)
+        .values(meta_data=Document.meta_data.op("||")(metadata))
+        .returning(Document)
+    )
     res = await db.execute(q)
     await db.commit()
     return res.scalar_one_or_none()

@@ -30,7 +30,9 @@ export interface ChatMessage {
   timestamp: Date;
   confidence?: number;
   sources?: Array<{
-    pageNumber: number;
+    document: string;
+    page: number;
+    pageNumber?: number;
     excerpt: string;
     relevance: number;
   }>;
@@ -42,6 +44,7 @@ interface DocumentContextType {
   deleteDocument: (id: string) => Promise<void>;
   getDocument: (id: string) => Document | undefined;
   summarizeDocument: (id: string) => Promise<string>;
+  downloadDocument: (id: string) => Promise<void>;
   chatMessages: ChatMessage[];
   sendMessage: (documentId: string, message: string) => Promise<void>;
   clearChat: (documentId: string) => Promise<void>;
@@ -54,14 +57,9 @@ const DocumentContext = createContext<DocumentContextType | undefined>(undefined
 
 // Helper functions to convert API types to local types
 const convertAPIDocument = (apiDoc: APIDocument): Document => {
-  if (!apiDoc || !apiDoc.id) {
-    console.error('Invalid API document:', apiDoc);
-    throw new Error('Cannot convert invalid document - missing required fields');
-  }
-  
   return {
     id: apiDoc.id,
-    name: apiDoc.name || apiDoc.originalName || apiDoc.filename|| 'Untitled Document',
+    name: apiDoc.filename || apiDoc.name || apiDoc.originalName || 'Untitled Document',
     size: apiDoc.size || 0,
     uploadDate: new Date(apiDoc.uploadedAt || Date.now()),
     content: apiDoc.extractedText,
@@ -99,9 +97,12 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const response = await documentsAPI.getDocuments({ limit: 100 });
-      // Ensure response.documents is an array
+      console.log('Documents API response:', response);
+      
       if (response && Array.isArray(response.documents)) {
-        setDocuments(response.documents.map(convertAPIDocument));
+        const convertedDocuments = response.documents.map(convertAPIDocument);
+        console.log('Converted documents:', convertedDocuments);
+        setDocuments(convertedDocuments);
       } else {
         console.error('Invalid documents response:', response);
         setDocuments([]);
@@ -118,7 +119,25 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const response = await documentsAPI.uploadDocument(file);
-      setDocuments(prev => [...prev, convertAPIDocument(response?.document)]);
+      
+      // Log the response to debug structure
+      console.log('Upload response:', response);
+      
+      // Handle different response structures
+      let document: APIDocument | undefined;
+      if (response.document) {
+        document = response.document;
+      } else if (response && typeof response === 'object' && 'id' in response) {
+        // Response might be the document itself
+        document = response as unknown as APIDocument;
+      }
+      
+      if (!document) {
+        console.error('Invalid upload response structure:', response);
+        throw new Error('Invalid response from server - no document data received');
+      }
+      
+      setDocuments(prev => [...prev, convertAPIDocument(document)]);
     } catch (error) {
       console.error('Failed to upload document:', error);
       throw error;
@@ -159,6 +178,29 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
       return summary;
     } catch (error) {
       console.error('Failed to summarize document:', error);
+      throw error;
+    }
+  };
+
+  const downloadDocument = async (id: string): Promise<void> => {
+    try {
+      const response = await documentsAPI.downloadDocument(id);
+      
+      // The backend returns a presigned URL
+      if (response.downloadUrl) {
+        const link = document.createElement('a');
+        link.href = response.downloadUrl;
+        link.setAttribute('download', response.filename || getDocument(id)?.name || 'document.pdf');
+        // For presigned URLs, we often need to open in a new tab to trigger download
+        link.setAttribute('target', '_blank');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        throw new Error('No download URL provided');
+      }
+    } catch (error) {
+      console.error('Failed to download document:', error);
       throw error;
     }
   };
@@ -246,6 +288,7 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
         deleteDocument,
         getDocument,
         summarizeDocument,
+        downloadDocument,
         chatMessages,
         sendMessage,
         clearChat,

@@ -36,19 +36,17 @@ class User(Base):
 class Document(Base):
     __tablename__ = "documents"
     id = sa.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    owner_id = sa.Column(
-        UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    owner_id = sa.Column(UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
     filename = sa.Column(sa.String(512))
     size = sa.Column(sa.Integer)
     content_type = sa.Column(sa.String(128))
     uploaded_at = sa.Column(sa.DateTime(), default=datetime.utcnow)
-    meta_data = sa.Column(sa.JSON, default={})
+
+    meta_data = sa.Column(sa.JSON, default=dict)  # FIXED here
 
     owner = relationship("User", back_populates="documents")
     embeddings = relationship("Embedding", back_populates="document", cascade="all, delete-orphan")
-
-    # ✅ Add this line
     summaries = relationship("Summary", back_populates="document", cascade="all, delete-orphan")
 
 

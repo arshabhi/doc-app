@@ -13,46 +13,76 @@ from openai import OpenAI
 # Initialize Qdrant client
 qdrant = QdrantClient(host="localhost", port=6333)
 
+def extract_content(file, filename: str | None = None):
+    """
+    Extracts content from:
+    - UploadFile
+    - bytes (memory buffer)
+    - local file path
 
-def extract_content(file):
+    Returns only structured page-level content where applicable.
+    Example:
+    [
+        {"page": 1, "content": "..."},
+        {"page": 2, "content": "..."}
+    ]
     """
-    Extracts content from a file (UploadFile or local path)
-    Returns {'extension': str, 'content': str|bytes}
-    """
-    if hasattr(file, "filename"):  # FastAPI UploadFile
+
+    import os, json
+    from pathlib import Path
+    import fitz  # PyMuPDF
+
+    # -----------------
+    # Determine input type
+    # -----------------
+    if hasattr(file, "filename"):                 
         filename = file.filename
-        file_obj = file.file
-    elif isinstance(file, (str, Path)):  # Local path
+        file_bytes = file.file.read()             
+    elif isinstance(file, bytes):                 
+        file_bytes = file
+        if not filename:
+            raise ValueError("filename must be provided when passing raw bytes")
+    elif isinstance(file, (str, Path)):           
         filename = os.path.basename(file)
-        file_obj = open(file, "rb")
+        with open(file, "rb") as f:
+            file_bytes = f.read()
     else:
-        raise TypeError("file must be a path or UploadFile")
+        raise TypeError("file must be UploadFile, bytes, or a path")
 
     extension = Path(filename).suffix.lower().lstrip(".")
+    page_data = []
 
-    try:
-        if extension in {"txt", "csv", "log"}:
-            content = file_obj.read().decode("utf-8", errors="ignore")
+    # -----------------
+    # Extraction
+    # -----------------
+    if extension in {"txt", "csv", "log"}:
+        text = file_bytes.decode("utf-8", errors="ignore")
+        lines = text.splitlines()
+        page_data = [{"page": i + 1, "content": line} for i, line in enumerate(lines)]
 
-        elif extension == "json":
-            content = json.load(file_obj)
+    elif extension == "json":
+        # JSON doesn't have pagination → wrap whole value in page 1
+        parsed = json.loads(file_bytes)
+        page_data = [{"page": 1, "content": parsed}]
 
-        elif extension == "pdf":
-            with fitz.open(stream=file_obj.read(), filetype="pdf") as doc:
-                content = "\n".join(page.get_text("text") for page in doc)
+    elif extension == "pdf":
+        with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+            page_data = [
+                {"page": i + 1, "content": page.get_text("text")}
+                for i, page in enumerate(doc)
+            ]
 
-        elif extension in {"jpg", "jpeg", "png"}:
-            content = file_obj.read()
+    elif extension in {"jpg", "jpeg", "png"}:
+        # No OCR here — return raw indication only
+        page_data = [{"page": 1, "content": "<IMAGE FILE - NO OCR>"}]
 
-        else:
-            content = file_obj.read()
+    else:
+        page_data = [{"page": 1, "content": "<UNSUPPORTED FORMAT>"}]
 
-    finally:
-        if not hasattr(file, "filename"):
-            file_obj.close()
-
-    return {"extension": extension, "content": content}
-
+    return {
+        "extension": extension,
+        "pages": page_data
+    }
 
 # def process_text_and_save_to_qdrant(content: str, collection_name: str = "documents", chunk_size: int = 500):
 #     """

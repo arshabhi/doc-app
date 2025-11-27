@@ -1,5 +1,5 @@
 # app/db/schemas/chat.py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -11,9 +11,9 @@ from datetime import datetime
 
 
 class ChatRequest(BaseModel):
-    session_id: Optional[UUID] = None
+    session_id: Optional[UUID] = Field(None, alias="conversationId")
     message: str
-    document_id: Optional[UUID] = None
+    document_id: Optional[UUID]
 
 
 class ChatResponse(BaseModel):
