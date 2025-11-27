@@ -40,7 +40,7 @@ The system includes a FastAPI backend, a React (Vite) frontend, and PostgreSQL +
 
 ## Summarization Architecture
 The following diagram provides how the summary is generated, based on the document.
-![alt text](tools/summarizer-workflow.png "Workflow of the Summarizer module")
+![alt text](assets/summarizer-workflow.png "Workflow of the Summarizer module")
 
 
 ## 🏗️ Tech Stack
