@@ -43,7 +43,7 @@ async def upload_document(
         )
 
         # Extract content from bytes (not UploadFile)
-        extracted = extract_content(file_bytes, filename=file.filename)
+        extracted = await extract_content(file_bytes, filename=file.filename)
 
         # Store in DB
         doc = await process_and_store_document(
